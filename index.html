@@ -2,7 +2,7 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Deriv Live Analyzer - Offline</title>
+<title>Moya Analyzer</title>
 <style>
     *{margin:0;padding:0;box-sizing:border-box}
 
@@ -28,6 +28,16 @@
         color:var(--text);
         font-family:'Courier New',monospace;
         overflow:hidden;
+    }
+
+    .container{
+        display:grid;
+        grid-template-rows: auto 1fr auto;
+        gap:10px;
+        width:100%;
+        height:100vh;
+        padding:15px;
+        box-sizing:border-box;
     }
 
     .top-bar select,
@@ -99,6 +109,7 @@
         gap:10px;
         min-height:0;
         height:100%;
+        overflow:hidden;
     }
     .digits-panel{
         background:rgba(0,255,119,.03);
@@ -288,8 +299,8 @@
         padding:12px;
         display:flex;
         flex-direction:column;
+        flex:0 0 220px;
         min-height:0;
-        max-height:220px;
     }
     .trade-history-header{
         display:flex;
@@ -406,7 +417,9 @@
         padding:12px;
         display:flex;
         flex-direction:column;
-        height:100%;
+        flex:1 1 auto;
+        min-height:0;
+        overflow:hidden;
     }
     .terminal-title{
         font-size:12px;
@@ -417,6 +430,7 @@
     }
     .terminal-output{
         flex:1;
+        min-height:0;
         overflow-y:auto;
         font-size:12px;
         line-height:1.4;
@@ -476,6 +490,7 @@
         margin-top:10px;
         padding-top:10px;
         border-top:1px solid rgba(0,255,119,.2);
+        flex-shrink:0;
     }
     .trade-panel h3{
         font-size:13px;
@@ -522,6 +537,7 @@
         margin-top:14px;
         padding-top:12px;
         border-top:1px solid rgba(0,255,119,.2);
+        flex-shrink:0;
     }
     .account-title{
         font-size:12px;
