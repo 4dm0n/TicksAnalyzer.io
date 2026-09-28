@@ -2,9 +2,28 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<title>Deriv Live Analyzer - Offline</title>
+<meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=coverage">
+    <meta name="apple-mobile-web-app-capable" content="yes">
+    <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
+    <meta name="format-detection" content="telephone=no">
+    <meta name="mobile-web-app-capable" content="yes">
+    <title>Deriv Live Analyzer - Offline</title>
 <style>
     *{margin:0;padding:0;box-sizing:border-box}
+
+    button,input,select{
+        -webkit-tap-highlight-color:transparent;
+        -webkit-touch-callout:none;
+        -webkit-user-select:none;
+        -moz-user-select:none;
+        -ms-user-select:none;
+        user-select:none;
+    }
+    button{
+        -webkit-touch-callout:none;
+        touch-action:manipulation;
+    }
 
     :root{
         --bg:#0a0f1a;
@@ -35,6 +54,16 @@
         overflow:hidden;
         -webkit-font-smoothing:antialiased;
         -moz-osx-font-smoothing:grayscale;
+        -webkit-text-size-adjust:100%;
+        text-size-adjust:100%;
+    }
+    body::before{
+        content:'';
+        position:fixed;
+        top:0;left:0;right:0;bottom:0;
+        background:radial-gradient(circle at 20% 50%, rgba(0,255,119,0.03) 0%, transparent 50%), radial-gradient(circle at 80% 80%, rgba(0,116,255,0.03) 0%, transparent 50%);
+        pointer-events:none;
+        z-index:0;
     }
 
     .container{
@@ -45,6 +74,8 @@
         height:100vh;
         padding:15px;
         box-sizing:border-box;
+        position:relative;
+        z-index:1;
     }
 
     .top-bar{
@@ -67,6 +98,30 @@
         outline:none;
         box-shadow:var(--card-shadow);
         transition:var(--transition);
+        -webkit-appearance:none;
+        -moz-appearance:none;
+        appearance:none;
+    }
+    .top-bar select{
+        -webkit-appearance:none;
+        -moz-appearance:none;
+        appearance:none;
+        background-image:none;
+    }
+    .top-bar select::-webkit-inner-spin-button,
+    .top-bar select::-webkit-outer-spin-button{
+        -webkit-appearance:none;
+        margin:0;
+    }
+    .top-bar input::-webkit-inner-spin-button,
+    .top-bar input::-webkit-outer-spin-button{
+        -webkit-appearance:none;
+        margin:0;
+    }
+    .top-bar input[type=number]::-webkit-inner-spin-button,
+    .top-bar input[type=number]::-webkit-outer-spin-button{
+        -webkit-appearance:none;
+        margin:0;
     }
     .top-bar select:focus,
     .top-bar input:focus{
@@ -327,10 +382,12 @@
         text-align:center;
         box-shadow:var(--card-shadow);
         transition:var(--transition);
+        backdrop-filter:blur(4px);
     }
     .stat-box:hover{
         box-shadow:var(--card-hover);
         border-color:var(--accent-cyan);
+        transform:translateY(-2px);
     }
     .stat-box .val{
         font-size:18px;
@@ -477,7 +534,7 @@
         margin-left:-3px;
         border-color:transparent transparent rgba(0,255,119,.92) transparent;
     }
-    .terminal-panel{
+.terminal-panel{
         background:var(--panel-bg);
         border:1px solid var(--panel-border);
         border-radius:var(--border-radius);
@@ -497,13 +554,12 @@
         border-bottom:1px solid var(--panel-border);
     }
     .terminal-output{
-        flex:1;
+        flex:1 1 auto;
         min-height:0;
-        max-height:40vh;
         overflow-y:auto;
         overflow-x:hidden;
         font-size:12px;
-        line-height:1.4;
+        line-height:1.5;
         -webkit-overflow-scrolling:touch;
     }
     .terminal-line{
@@ -534,30 +590,66 @@
         display:flex;
         gap:10px;
         align-items:center;
+        justify-content:space-between;
         margin-top:8px;
-        padding-top:8px;
+        padding:10px 14px;
         border-top:1px solid var(--panel-border);
         flex-wrap:wrap;
         flex-shrink:0;
     }
     .controls-bottom .label{
         font-size:11px;
-        color:#66cc99;
+        color:var(--text-muted);
     }
-    .toggle-btn{
-        background:rgba(0,0,0,.4);
+    .quick-stats{
+        display:flex;
+        gap:12px;
+        align-items:center;
+        font-size:12px;
+    }
+    .quick-stats .stat{
+        display:flex;
+        align-items:center;
+        gap:4px;
+    }
+    .quick-stats .stat .val{
+        font-weight:bold;
         color:var(--accent-cyan);
-        border:1px solid var(--panel-border);
-        padding:6px 14px;
+    }
+    .quick-stats .stat .val.won{ color:var(--hot); }
+    .quick-stats .stat .val.lost{ color:var(--cold); }
+    .controls-left{
+        display:flex;
+        align-items:center;
+        gap:10px;
+        flex-wrap:wrap;
+    }
+    .controls-right{
+        display:flex;
+        align-items:center;
+        gap:10px;
+    }
+    #btn-trade{
+        background:var(--accent-cyan);
+        color:#000;
+        border:1px solid var(--accent-cyan);
+        padding:6px 16px;
         font-family:monospace;
         font-size:12px;
         cursor:pointer;
         border-radius:6px;
+        font-weight:bold;
+        box-shadow:var(--shadow-glow);
         transition:var(--transition);
-        box-shadow:var(--card-shadow);
     }
-    .toggle-btn:hover{
-        border-color:var(--accent-cyan);
+    #btn-trade:hover{
+        transform:scale(1.05);
+    }
+    #btn-trade:disabled{
+        opacity:.3;
+        cursor:not-allowed;
+        transform:none;
+        box-shadow:none;
     }
     .toggle-btn.toggle-on{
         background:var(--accent-cyan);
@@ -791,9 +883,11 @@
         .stats-grid{ grid-template-columns:1fr 1fr; }
         .trade-history-panel{ flex:0 0 30vh; }
         .right-panel{ max-height:50vh; }
-        .trade-row{ flex-direction:column; align-items:stretch; gap:6px; }
-        .trade-row button{ width:100%; }
-        .controls-bottom{ flex-direction:column; align-items:stretch; gap:6px; }
+        .controls-bottom{ flex-direction:column; gap:8px; }
+        .controls-left{ width:100%; flex-wrap:wrap; }
+        .controls-right{ width:100%; }
+        #btn-trade{ width:100%; }
+        .quick-stats{ flex-wrap:wrap; gap:8px; }
         .toggle-btn{ width:100%; }
         .chart-subtitle{ font-size:10px; }
     }
@@ -809,6 +903,7 @@
         .trade-history-table th, .trade-history-table td{ padding:3px 4px; }
         .digits-panel{ padding:10px; }
         .chart-title-bar{ font-size:13px; }
+        .quick-stats{ flex-wrap:wrap; gap:6px; font-size:10px; }
     }
 
     @media (max-width: 480px){
@@ -820,12 +915,29 @@
         .trade-history-panel{ flex:0 0 40vh; }
         .right-panel{ max-height:60vh; }
         .trade-history-header h3{ font-size:11px; }
-        .controls-bottom{ flex-wrap:wrap; }
+        .controls-bottom{ flex-wrap:wrap; gap:4px; }
+        .controls-left{ flex-direction:column; width:100%; }
+        .quick-stats{ flex-direction:column; }
     }
 
     @supports (-webkit-touch-callout: none){
         .terminal-output{ -webkit-overflow-scrolling:touch; }
         .trade-history-table-wrapper{ -webkit-overflow-scrolling:touch; }
+    }
+
+    @media screen and (max-width: 736px) and (orientation: landscape){
+        .container{ height:100vh; padding:8px; }
+        .top-bar{ flex-wrap:wrap; gap:6px; }
+        .top-bar select, .top-bar input, .top-bar button{ padding:5px 8px; font-size:11px; }
+        .trade-history-panel{ flex:0 0 24vh; }
+        .quick-stats{ font-size:10px; }
+        .controls-bottom{ gap:6px; }
+    }
+
+    @media screen and (max-width: 812px) and (orientation: portrait){
+        .trade-history-panel{ flex:0 0 34vh; }
+        .right-panel{ max-height:68vh; }
+        .stats-grid{ font-size:11px; }
     }
 </style>
 </head>
@@ -932,10 +1044,16 @@
     </div>
 
     <div class="controls-bottom">
+        <div class="controls-left">
         <label>Martingala:</label>
         <button id="btn-martingala" class="toggle-btn" onclick="toggleMartingala()" title="Martingala: duplica la apuesta tras una pérdida para recuperar fondos">DESACTIVADO</button>
         <label>Bot Auto:</label>
         <button id="btn-autobot" class="toggle-btn" onclick="toggleAutoBot()" title="Auto-bot: abre operaciones automáticamente siguiendo las señales de análisis">DESACTIVADO</button>
+        </div>
+        <div class="controls-right">
+        <button id="btn-trade" onclick="openTrade()" disabled title="Abrir operación">ENTRAR</button>
+        <div class="quick-stats" id="quick-stats"></div>
+        </div>
     </div>
 
 </div>
@@ -1031,7 +1149,9 @@ function start() {
     };
 
     document.getElementById('btn-start').disabled = true;
+    document.getElementById('btn-start').classList.add('toggle-on');
     document.getElementById('btn-stop').disabled = false;
+    document.getElementById('btn-stop').classList.remove('toggle-on');
     document.getElementById('btn-trade').disabled = false;
     updateAccount();
 }
@@ -1438,14 +1558,30 @@ function formatMoney(v) {
 }
 
 function updateAccount() {
-    const decimals = symbols[document.getElementById('symbol').value]?.decimals || 2;
     const profitClass = totalProfit >= 0 ? 'green' : 'red';
     const profitSign = totalProfit >= 0 ? '+' : '';
-    document.getElementById('acc-balance').textContent = formatMoney(accountBalance);
-    document.getElementById('acc-pnl').textContent = profitSign + formatMoney(totalProfit);
-    document.getElementById('acc-pnl').className = 'acc-pnl-val ' + profitClass;
-    document.getElementById('acc-won').textContent = contractsWon;
-    document.getElementById('acc-lost').textContent = contractsLost;
+    const balanceEl = document.getElementById('acc-balance');
+    const pnlEl = document.getElementById('acc-pnl');
+    const wonEl = document.getElementById('acc-won');
+    const lostEl = document.getElementById('acc-lost');
+    if (balanceEl) balanceEl.textContent = formatMoney(accountBalance);
+    if (pnlEl) { pnlEl.textContent = profitSign + formatMoney(totalProfit); pnlEl.className = 'acc-pnl-val ' + profitClass; }
+    if (wonEl) wonEl.textContent = contractsWon;
+    if (lostEl) lostEl.textContent = contractsLost;
+    updateQuickStats();
+}
+
+function updateQuickStats() {
+    const qs = document.getElementById('quick-stats');
+    if (!qs) return;
+    const profitClass = totalProfit >= 0 ? 'won' : 'lost';
+    const profitSign = totalProfit >= 0 ? '+' : '';
+    qs.innerHTML = `
+        <div class="stat"><span class="val">${formatMoney(accountBalance)}</span><span style="color:var(--text-muted);"> Balance</span></div>
+        <div class="stat"><span class="val ${profitClass}">${profitSign}${formatMoney(totalProfit)}</span><span style="color:var(--text-muted);"> PnL</span></div>
+        <div class="stat"><span class="val won">${contractsWon}</span><span style="color:var(--text-muted);"> Won</span></div>
+        <div class="stat"><span class="val lost">${contractsLost}</span><span style="color:var(--text-muted);"> Lost</span></div>
+    `;
 }
 
 function addTradeToHistory(trade, result, pnl, closePrice, digit) {
@@ -1493,6 +1629,7 @@ function clearTradeHistory() {
 
 function updateTradeStatus() {
     const statusEl = document.getElementById('trade-status');
+    const btnTrade = document.getElementById('btn-trade');
     if (trade) {
         const digit = trade.digit;
         const type = trade.type;
@@ -1500,22 +1637,26 @@ function updateTradeStatus() {
         const won = type === 'over' ? digit > thold : digit <= thold;
         const resultClass = won ? 'green' : 'red';
         const resultText = won ? 'GANAR' : 'PERDER';
-        statusEl.innerHTML = `<span class="${resultClass}">${trade.direction} ${type.toUpperCase()} $${thold}</span> - Dígito: ${digit} - <span class="bold ${resultClass}">${resultText}</span>`;
+        if (statusEl) statusEl.innerHTML = `<span class="${resultClass}">${trade.direction} ${type.toUpperCase()} $${thold}</span> - Dígito: ${digit} - <span class="bold ${resultClass}">${resultText}</span>`;
+        if (btnTrade) { btnTrade.textContent = 'CERRAR'; }
     } else {
         const type = document.getElementById('trade-type').value;
         const thold = document.getElementById('trade-thold').value;
-        statusEl.innerHTML = `<span class="cyan">Listo: ${type.toUpperCase()} $${thold}</span>`;
+        if (statusEl) statusEl.innerHTML = `<span class="cyan">Listo: ${type.toUpperCase()} $${thold}</span>`;
+        if (btnTrade) { btnTrade.textContent = 'ENTRAR'; }
     }
 }
 
 function updateTradeDirectionInfo() {
     const el = document.getElementById('trade-direction-info');
-    if (trade) {
-        const dir = trade.direction;
-        const type = trade.type.toUpperCase();
-        el.innerHTML = `<span class="cyan">${dir} ${type} $${trade.thold}</span>`;
-    } else {
-        el.innerHTML = '<span class="gray">Predicción: Over / Under según selector</span>';
+    if (el) {
+        if (trade) {
+            const dir = trade.direction;
+            const type = trade.type.toUpperCase();
+            el.innerHTML = `<span class="cyan">${dir} ${type} $${trade.thold}</span>`;
+        } else {
+            el.innerHTML = '<span class="text-muted">Predicción: Over / Under según selector</span>';
+        }
     }
 }
 
@@ -1630,7 +1771,8 @@ function resolveTrade(won, digit) {
     trade = null;
     document.getElementById('btn-trade').textContent = 'ENTRAR';
     document.getElementById('btn-trade').onclick = openTrade;
-    document.getElementById('trade-status').innerHTML = '<span class="cyan">Listo para operar</span>';
+    const statusEl = document.getElementById('trade-status');
+    if (statusEl) statusEl.innerHTML = '<span class="cyan">Listo para operar</span>';
     updateStats();
     updateAccount();
     updateTradeDirectionInfo();
@@ -1734,7 +1876,9 @@ function stop() {
         ws = null;
     }
     document.getElementById('btn-start').disabled = false;
+    document.getElementById('btn-start').classList.remove('toggle-on');
     document.getElementById('btn-stop').disabled = true;
+    document.getElementById('btn-stop').classList.add('toggle-on');
     document.getElementById('btn-trade').disabled = true;
     if (trade) {
         trade = null;
@@ -2050,6 +2194,7 @@ updateAccount();
 updateTradeDirectionInfo();
 renderTradeHistory();
 document.getElementById('btn-stop').disabled = true;
+document.getElementById('btn-stop').classList.add('toggle-on');
 document.getElementById('btn-trade').disabled = true;
 </script>
 
