@@ -1,7 +1,7 @@
 /* Local workspace controls; no framework, external icon font or account needed. */
-function wilsonInterval(successes, count) {
+function wilsonInterval(successes, count, z = 1.96) {
     if (!count) return [0, 1];
-    const z = 1.96, p = successes / count, denominator = 1 + z*z/count;
+    const p = successes / count, denominator = 1 + z*z/count;
     const centre = (p + z*z/(2*count)) / denominator;
     const margin = z * Math.sqrt(p*(1-p)/count + z*z/(4*count*count)) / denominator;
     return [Math.max(0, centre-margin), Math.min(1, centre+margin)];
@@ -9,53 +9,80 @@ function wilsonInterval(successes, count) {
 
 function updateSignal() {
     const count = ticks.length;
+    const mode = document.getElementById('signal-sensitivity').value;
+    const all = document.getElementById('signal-scope').value === 'all';
     const raw = document.getElementById('trade-thold').value;
-    const n = Number(raw);
-    const valid = raw !== '' && Number.isInteger(n) && n >= 0 && n < 9;
-    const ready = count === 200 && valid;
-    latestSignal = null;
-    document.getElementById('window-count').textContent = count + ' / 200 · Tick ' + totalTicks;
-    document.getElementById('window-progress').value = count;
-    const summary = document.getElementById('signal-summary');
-    const confidence = document.getElementById('confidence');
-    confidence.value = '—';
-    if (ready) {
+    const selected = Number(raw);
+    const valid = raw !== '' && Number.isInteger(selected) && selected >= 0 && selected < 9;
+    const ready = count === analysisWindow;
+    const candidates = [];
+    if (ready) for (let n = 0; n < 9; n++) {
+        if (!all && (!valid || n !== selected)) continue;
         const overCount = ticks.filter(d => d > n).length;
-        const theoreticalOver = (9-n)/10;
-        const type = overCount/count > theoreticalOver ? 'over' : 'under';
+        const type = overCount/count > (9-n)/10 ? 'over' : 'under';
         const hits = type === 'over' ? overCount : count-overCount;
         const observed = hits/count;
         const baseline = getWinProbability(type,n);
         const [low, high] = wilsonInterval(hits,count);
-        // Compare a single user-selected threshold with its own theoretical baseline.
-        // A high raw percentage alone does not qualify as a signal.
-        const qualified = low > baseline;
-        latestSignal = {type,n,observed,baseline,low,high,qualified};
-        confidence.value = (observed*100).toFixed(1) + '%';
-        summary.textContent = qualified ? (type === 'over' ? '↑ OVER > ' : '↓ UNDER ≤ ') + n + ' · Sesgo observado' : 'Sin señal clara para el umbral ' + n;
-        document.getElementById('signal-explanation').textContent = type.toUpperCase() + ' ' + n + ': ' + hits + '/200 · Frecuencia ' + (observed*100).toFixed(1) + '% · Base teórica ' + (baseline*100).toFixed(0) + '% · Intervalo Wilson 95%: ' + (low*100).toFixed(1) + '–' + (high*100).toFixed(1) + '%. No es una probabilidad predictiva ni una garantía de ganancia.';
-    } else {
-        summary.textContent = !valid ? 'Selecciona un umbral de 0 a 8 para analizar ambas direcciones.' : 'Recopilando datos: faltan ' + (200-count) + ' ticks.';
-        document.getElementById('signal-explanation').textContent = 'A partir de 200 ticks, cada tick nuevo sustituye al más antiguo. Confidence muestra la frecuencia de la dirección analizada; no predice el siguiente tick.';
+        const balancedLow = wilsonInterval(hits,count,1.281552)[0];
+        const excess = observed-baseline;
+        const qualified = mode === 'frequent' ? excess >= .03 - 1e-10 : mode === 'balanced' ? balancedLow > baseline : low > baseline;
+        const score = excess / Math.sqrt(baseline*(1-baseline)/count);
+        candidates.push({type,n,hits,observed,baseline,low,high,qualified,score});
     }
-    document.getElementById('signal-digits').innerHTML = digitCounts.map((frequency,digit) => {
-        const active = latestSignal?.qualified && digit === n;
-        const arrow = active ? (latestSignal.type === 'over' ? '↑' : '↓') : '·';
-        return '<div class="signal-digit' + (active ? ' suggested' : '') + '"><span class="signal-arrow" aria-label="' + (active ? latestSignal.type.toUpperCase() + ' umbral ' + digit : 'Sin señal') + '">' + arrow + '</span><strong>' + digit + '</strong><small>' + (count ? frequency/count*100 : 0).toFixed(1) + '%</small></div>';
+    candidates.sort((a,b)=>Number(b.qualified)-Number(a.qualified)||b.score-a.score||a.n-b.n);
+    latestSignal = candidates[0] || null;
+    const active = candidates.filter(s=>s.qualified);
+    document.getElementById('window-count').textContent = count + ' / ' + analysisWindow + ' · Tick ' + totalTicks;
+    document.getElementById('analysis-caption').textContent = 'Últimos ' + analysisWindow + ' ticks';
+    const progress = document.getElementById('window-progress'); progress.max = analysisWindow; progress.value = count;
+    document.getElementById('confidence').value = latestSignal ? (latestSignal.observed*100).toFixed(1)+'%' : '—';
+    const summary=document.getElementById('signal-summary');
+    const explanation=document.getElementById('signal-explanation');
+    if (!ready) {
+        summary.textContent = 'Recopilando datos: faltan ' + (analysisWindow-count) + ' ticks.';
+        explanation.textContent = 'Cada tick nuevo actualizará las señales. Puedes reducir la ventana para empezar antes; una ventana corta también fluctúa más.';
+    } else if (!latestSignal) {
+        summary.textContent = 'Selecciona un umbral entre 0 y 8 o analiza todos.';
+        explanation.textContent = 'El umbral 9 no permite comparar dos resultados posibles.';
+    } else {
+        const s=latestSignal;
+        summary.textContent = active.length ? active.length+' señal(es) · '+(s.type==='over'?'↑ OVER > ':'↓ UNDER ≤ ')+s.n+' · '+(mode==='frequent'?'Exploratoria':mode==='balanced'?'Equilibrada':'Estricta') : 'Sin señal con el filtro actual';
+        explanation.textContent = 'Principal: '+s.type.toUpperCase()+' '+s.n+' · '+s.hits+'/'+count+' · Frecuencia '+(s.observed*100).toFixed(1)+'% · Base '+(s.baseline*100).toFixed(0)+'% · Intervalo Wilson 95%: '+(s.low*100).toFixed(1)+'–'+(s.high*100).toFixed(1)+'%. '+(mode==='frequent'?'Exploratoria: diferencia de al menos 3 puntos porcentuales; no exige significancia estadística. ':'')+'Frecuencia histórica, no probabilidad de ganar. Las señales de distintos umbrales se solapan; no son confirmaciones independientes.';
+    }
+    document.getElementById('signal-digits').innerHTML = digitCounts.map((frequency,digit)=>{
+        const s=active.find(s=>s.n===digit);
+        return '<div class="signal-digit'+(s?' suggested':'')+'"><span class="signal-arrow" aria-label="'+(s?s.type.toUpperCase()+' umbral '+digit:'Sin señal')+'">'+(s?(s.type==='over'?'↑':'↓'):'·')+'</span><strong>'+digit+'</strong><small>'+(count?frequency/count*100:0).toFixed(1)+'%</small></div>';
     }).join('');
 }
 
+function saveAnalysisSettings() {
+    try { localStorage.setItem('moyaAnalysisSettings', JSON.stringify({window:analysisWindow,sensitivity:document.getElementById('signal-sensitivity').value,scope:document.getElementById('signal-scope').value})); } catch (_) {}
+}
+function changeAnalysisWindow() {
+    const input=document.getElementById('analysis-window');
+    const value=Number(input.value);
+    if (!Number.isInteger(value)||value<20||value>1000) { input.value=analysisWindow; showToast('Elige entre 20 y 1000 ticks.', 'error'); return; }
+    analysisWindow=value;
+    ticks=ticks.slice(-analysisWindow);
+    digitCounts=Array(10).fill(0);ticks.forEach(d=>digitCounts[d]++);
+    saveAnalysisSettings(); updateDisplay();
+}
+
 const helpContent = {
+    'analysis-window': ['Ticks a analizar', 'Cantidad de datos recientes usados en gráficos, estadísticas y señales: entre 20 y 1000. Al reducir se conservan los últimos ticks; al aumentar se esperan nuevos datos hasta completar la ventana. No cambia la duración de las operaciones (3 ticks).', 'Ejemplo: 50 ticks empieza antes que 200, pero los porcentajes fluctúan más.'],
+    'signal-sensitivity': ['Sensibilidad', 'Frecuente: muestra desviaciones de 3 puntos porcentuales sin exigir significancia. Equilibrada: límite inferior Wilson al 80% superior a la base. Estricta: usa el 95%. Más señales no significa mayor precisión.', 'Ejemplo: OVER 5 con 44% observado frente a base 40% puede activar el modo frecuente, aunque no pase el filtro estricto.'],
+    'signal-scope': ['Umbrales de señales', 'Todos analiza umbrales 0 a 8 en cada tick; Solo el elegido analiza el campo Umbral. Confidence corresponde a la señal principal, ordenada por desviación estandarizada. El bot usa esa dirección y ese umbral.', 'Las flechas de diferentes umbrales pueden representar los mismos ticks; no son oportunidades independientes.'],
     symbol: ['Activo', 'Selecciona el mercado que suministra los ticks. Cambiar de activo reinicia la ventana; una operación pendiente se anula y su apuesta se devuelve.', 'Ejemplo: Volatility 10.'],
     'real-price': ['Precio actual', 'Última cotización recibida de Deriv. Es de solo lectura. El último dígito se obtiene respetando la precisión indicada por el proveedor.', 'Ejemplo: 123.40 produce el dígito 0, no el 4.'],
     'trade-type': ['Predicción', 'OVER gana si el último dígito es mayor que el umbral. UNDER gana si es menor o igual. Esta es la regla del simulador y no un contrato real de Deriv.', 'Ejemplo: OVER 5 gana con 6, 7, 8 o 9; UNDER 5 con 0 a 5. La resolución ocurre en el tercer tick posterior a la entrada.'],
     'trade-thold': ['Umbral', 'Número con el que se compara el dígito al liquidar la operación. El análisis compara la frecuencia observada con la base teórica de ese mismo umbral.', 'Ejemplo: OVER 0 tiene una base de 90%; un 60% observado no sería una señal favorable. El umbral 9 no permite una operación útil.'],
     'trade-stake': ['Apuesta', 'Importe simulado reservado al abrir. El saldo disponible baja inmediatamente. Al ganar se devuelve la apuesta más el beneficio; al perder no se descuenta otra vez.', 'Ejemplo: saldo $100, apuesta $10 → disponible $90. OVER 4 ganado devuelve $20 → saldo $110.'],
     'trade-tp': ['Take profit', 'Detiene la sesión y el bot cuando el beneficio neto acumulado alcanza este importe. Se conserva al reconectar. Cero desactiva el objetivo.', 'Ejemplo: 20 detiene la sesión al alcanzar al menos $20 de PnL.'],
-    confidence: ['Confidence · frecuencia observada', 'Campo automático y de solo lectura. Muestra cuántos de los últimos 200 dígitos cumplen la dirección analizada. La flecha aparece cuando el límite inferior del intervalo Wilson de 95% supera la probabilidad teórica del umbral elegido. No significa 95% de probabilidad de ganar. Las ventanas se solapan y observar muchas ventanas puede producir señales por azar.', 'Ejemplo: OVER 5 cumple en 110 de 200 ticks: frecuencia 55%, base 40%, intervalo aproximado 48.1–61.7%. Es una desviación histórica, no una predicción validada.'],
+    confidence: ['Confidence · frecuencia observada', 'Porcentaje histórico de ticks que cumplen la dirección y umbral de la señal principal. No es una probabilidad predictiva. El intervalo mostrado siempre es Wilson al 95%; la sensibilidad elegida determina cuándo aparece una flecha.', 'Ejemplo: 44 aciertos de 100 ticks = 44% observado; no significa 44% garantizado en el próximo tick.'],
     'theme-select': ['Tema', 'Cambia los colores de la interfaz. Los estados de las operaciones mantienen siempre azul, verde y rojo.', 'Ejemplo: White usa superficies claras; Ocean, tonos azules.'],
     'btn-martingala': ['Martingala', 'Duplica la siguiente apuesta tras perder y vuelve a la apuesta base al ganar. No aumenta la probabilidad de acierto. Se rechazan importes superiores al saldo disponible.', 'Ejemplo: base $2 → pérdida → siguiente apuesta $4.'],
-    'btn-autobot': ['Bot automático', 'Solo abre operaciones simuladas al completar 200 ticks y existir una señal del umbral configurado. Usa la misma señal visible y nunca abre dos operaciones a la vez.', 'Ejemplo: flecha ↑ sobre 5 → operación OVER 5. Una señal histórica no garantiza rentabilidad.'],
+    'btn-autobot': ['Bot automático', 'Espera a completar la ventana elegida y sigue la señal principal con su sensibilidad actual. Usa el mismo umbral y dirección que se muestran. Solo abre una operación a la vez.', 'En modo frecuente también opera señales exploratorias. Más entradas no implica mejores resultados.'],
     'acc-balance': ['Saldo disponible', 'Saldo simulado libre después de reservar la operación abierta. PnL contiene solo resultados liquidados. Detener o perder la conexión anula la operación pendiente y devuelve su apuesta. El historial y la cuenta viven en esta pestaña; solo el orden y el tema se guardan.', 'Ejemplo: $100 disponibles, apuesta $10, pérdida → $90.'],
     'acc-pnl': ['PnL', 'Suma de ganancias y pérdidas liquidadas. No incluye apuestas abiertas. Los pagos son teóricos del simulador, sin comisiones, y no cotizaciones reales de Deriv.', 'Ejemplo: +$10 y −$4 → PnL +$6.'],
     'acc-won': ['Ganadas', 'Número de operaciones liquidadas con resultado ganador. No cuenta operaciones abiertas ni anuladas.', 'Ejemplo: dos cierres ganadores → 2.'],
@@ -183,5 +210,16 @@ try {
         if(section)workspace.append(section);
     });
 } catch (_) { /* Ignore unavailable storage and malformed saved layouts. */ }
+try {
+    const saved=JSON.parse(localStorage.getItem('moyaAnalysisSettings')||'null');
+    if(saved) {
+        if(Number.isInteger(saved.window)&&saved.window>=20&&saved.window<=1000)analysisWindow=saved.window;
+        if(['frequent','balanced','strict'].includes(saved.sensitivity))document.getElementById('signal-sensitivity').value=saved.sensitivity;
+        if(['all','selected'].includes(saved.scope))document.getElementById('signal-scope').value=saved.scope;
+    }
+} catch (_) {}
+document.getElementById('analysis-window').value=analysisWindow;
+document.getElementById('analysis-window').addEventListener('change',changeAnalysisWindow);
+['signal-sensitivity','signal-scope'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{saveAnalysisSettings();updateSignal();}));
 ['trade-thold','trade-type'].forEach(id=>document.getElementById(id).addEventListener('input',updateSignal));
 updateSignal();

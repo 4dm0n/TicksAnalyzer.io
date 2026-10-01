@@ -25,7 +25,8 @@ const server=http.createServer((req,res)=>{
  const checks=[];const check=(name,condition)=>{if(!condition)throw Error(name);checks.push(name);};
  const field=(id,value)=>document.getElementById(id).value=value;
  check('standalone HTML has no companion requests',!document.querySelector('link[href="glass.css"],script[src="workspace.js"]'));
- check('embedded styles and icons load with companion files blocked',document.querySelectorAll('.ui-icon').length===19&&getComputedStyle(document.querySelector('.top-bar')).display==='grid');
+ check('embedded styles and icons load with companion files blocked',document.querySelectorAll('.ui-icon').length===22&&getComputedStyle(document.querySelector('.top-bar')).display==='grid');
+ field('analysis-window','200');changeAnalysisWindow();field('signal-sensitivity','strict');field('signal-scope','selected');
  start(); const feed=d=>processTick(d,100+d/100);
  for(let i=0;i<200;i++)feed(i%10);
  check('200 ticks and neutral window',totalTicks===200&&ticks.length===200&&!latestSignal.qualified);
@@ -65,7 +66,17 @@ const server=http.createServer((req,res)=>{
  check('donut segments have visible geometry',[...document.querySelectorAll('.donut-svg path')].every(p=>p.getAttribute('d')?.includes('A'))&&document.querySelectorAll('.donut-svg path').length>0);
  showFieldHelp('confidence');check('help modal opens',document.querySelector('dialog').open);document.querySelector('dialog').close();
  document.querySelector('[data-section="digits"] .drag-handle').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));check('section position stored',JSON.parse(localStorage.getItem('moyaSectionOrder'))[0]==='signals');
- return checks;
+ const counter=totalTicks;field('analysis-window','50');changeAnalysisWindow();
+ check('smaller window trims counts without resetting trade clock',analysisWindow===50&&ticks.length===50&&digitCounts.reduce((a,b)=>a+b,0)===50&&totalTicks===counter);
+ field('analysis-window','120');changeAnalysisWindow();check('larger window waits for new ticks',!latestSignal&&ticks.length===50);
+ field('analysis-window','0');changeAnalysisWindow();check('invalid window rejected',analysisWindow===120);
+ field('analysis-window','100');changeAnalysisWindow();field('signal-scope','selected');field('trade-thold','4');field('signal-sensitivity','frequent');
+ start();for(let i=0;i<100;i++)feed(i<54?9:0);
+ check('frequent mode shows modest observed deviation',latestSignal.qualified&&latestSignal.observed===.54);
+ field('signal-sensitivity','strict');updateSignal();check('strict mode rejects same modest deviation',!latestSignal.qualified);
+ field('signal-scope','all');field('signal-sensitivity','frequent');updateSignal();check('all thresholds offers multiple visible candidates',document.querySelectorAll('.suggested').length>1);
+ saveAnalysisSettings();check('analysis preferences stored',JSON.parse(localStorage.getItem('moyaAnalysisSettings')).window===100);
+ stop();return checks;
 })()`);
  await send('Page.reload');await new Promise(r=>setTimeout(r,400));
  if(!await evaluate("document.querySelector('.main').firstElementChild.dataset.section==='signals'"))throw Error('Order restore failed');

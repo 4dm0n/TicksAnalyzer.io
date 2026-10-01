@@ -27,7 +27,14 @@
     "bot uses displayed signal",
     "donut segments have visible geometry",
     "help modal opens",
-    "section position stored"
+    "section position stored",
+    "smaller window trims counts without resetting trade clock",
+    "larger window waits for new ticks",
+    "invalid window rejected",
+    "frequent mode shows modest observed deviation",
+    "strict mode rejects same modest deviation",
+    "all thresholds offers multiple visible candidates",
+    "analysis preferences stored"
   ],
   "restoredOrder": true,
   "layout": [
@@ -227,7 +234,7 @@
   "live": {
     "ticks": 1,
     "connected": true,
-    "lastPrice": 4942.932
+    "lastPrice": 4922.52
   },
   "errors": []
 }

@@ -26,10 +26,10 @@ A real-time tick analysis dashboard for Deriv synthetic indices and forex pairs.
 - **3-tick resolution delay** in this simulator
 
 ### Signals and workspace
-- A rolling 200-tick window updates on every tick; the independent tick counter keeps advancing after 200.
+- A configurable 20–1000-tick window updates on every tick; the independent tick counter keeps advancing after 200.
 - Confidence is the observed frequency of the analyzed direction at the selected threshold, not a predictive win probability.
-- An ↑ OVER / ↓ UNDER arrow appears when the lower 95% Wilson bound exceeds that direction's theoretical baseline. Otherwise the UI reports no clear signal. Repeated overlapping windows may produce chance signals.
-- The bot waits for 200 ticks and follows the displayed signal.
+- Arrows use the selected sensitivity: Frequent (at least 3 percentage points above baseline), Balanced (lower Wilson 80% bound above baseline), or Strict (Wilson 95%). Otherwise the UI reports no clear signal. Repeated overlapping windows may produce chance signals.
+- The bot waits for the configured window and follows the main signal, including its threshold and sensitivity.
 - Immediate history: open blue, won green, lost red, cancelled grey in every theme.
 - Reorder sections with transparent dot handles (mouse or touch; keyboard arrows when focused); localStorage saves their order. Fields include modal help and local SVG icons.
 - Account and history are in-memory; only theme and section order persist across reloads.
@@ -112,8 +112,12 @@ Deploy **index.html** to GitHub Pages. Styles, SVG icons and workspace logic are
 
 ## Verification
 
-27 functional checks, persisted ordering, 30 theme/viewport combinations and a real read-only Deriv tick connection passed in desktop Chrome. See workspace-checks.json. Physical iOS/Android validation remains pending. Run Get-Content verify-workspace.cjs -Raw | node on Windows with Chrome; CHROME_PATH can override the executable. Tests use ports 8765/9223 and the isolated .ui-browser profile.
+35 functional checks, persisted ordering, 30 theme/viewport combinations and a real read-only Deriv tick connection passed in desktop Chrome. See workspace-checks.json. Physical iOS/Android validation remains pending. Run Get-Content verify-workspace.cjs -Raw | node on Windows with Chrome; CHROME_PATH can override the executable. Tests use ports 8765/9223 and the isolated .ui-browser profile.
 
 ### Updating embedded assets
 
 `glass.css` and `workspace.js` remain editable sources. After changing them, run `node sync-assets.cjs` to synchronize their embedded blocks in `index.html`. The resulting HTML works on its own. Hard-refresh after publishing to bypass an older cached HTML document.
+
+### Configurable window and sensitivity
+
+Defaults: 100 ticks, Frequent sensitivity, all thresholds (0–8). Preferences persist in localStorage. Frequent mode is exploratory and does not require statistical significance or promise profitability. The main signal ranks by standardized deviation; Confidence refers to it. Multiple threshold arrows can be correlated. Shrinking the window discards oldest data; growing it waits for new samples without resetting account or settlement counters.

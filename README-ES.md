@@ -24,10 +24,10 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 - **Retraso de resolución de 3 ticks** para liquidación en este simulador
 
 ### Señales y workspace
-- La ventana conserva los últimos 200 ticks y se recalcula con cada tick. El contador total sigue avanzando sin límite de ventana.
+- La ventana conserva entre 20 y 1000 ticks (configurable) y se recalcula con cada tick. El contador total sigue avanzando sin límite de ventana.
 - Confidence muestra la frecuencia observada de la dirección analizada para el umbral seleccionado. No es una probabilidad predictiva de ganar.
-- Las flechas ↑ OVER / ↓ UNDER aparecen sobre el umbral cuando el límite inferior del intervalo Wilson del 95% supera la base teórica de esa dirección. Sin esa evidencia se muestra “Sin señal clara”. Las ventanas solapadas pueden generar señales por azar.
-- El bot espera 200 ticks y usa la misma señal visible.
+- Las flechas ↑ OVER / ↓ UNDER aparecen según la sensibilidad elegida: Frecuente (desviación ≥3 puntos porcentuales), Equilibrada (límite Wilson 80%) o Estricta (límite Wilson 95%). Los límites se comparan con la base teórica de cada umbral. Sin esa evidencia se muestra “Sin señal clara”. Las ventanas solapadas pueden generar señales por azar.
+- El bot espera a completar la ventana configurada y usa la señal principal visible, con su umbral y sensibilidad.
 - Historial inmediato: abierta azul, ganada verde, perdida roja; anulada gris. Los colores semánticos se conservan en todos los temas.
 - Secciones reordenables con el control de puntitos (ratón o toque; flechas del teclado al enfocarlo), con orden guardado en localStorage. Cada campo dispone de ayuda modal con ejemplos e iconos SVG locales.
 - Historial y balance duran durante la pestaña; no se guardan al recargar. Tema y orden sí persisten cuando el navegador permite almacenamiento.
@@ -118,10 +118,14 @@ Sube **index.html** a GitHub Pages. Incluye estilos, iconos SVG y lógica del wo
 
 ## Verificación
 
-27 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
+35 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
 
 En Windows con Chrome instalado: Get-Content verify-workspace.cjs -Raw | node. CHROME_PATH permite indicar otro ejecutable compatible. Las pruebas usan los puertos locales 8765 y 9223 y un perfil aislado .ui-browser.
 
 ### Actualización de estilos e iconos
 
 `glass.css` y `workspace.js` se conservan como fuentes editables. Después de modificarlos, ejecuta `node sync-assets.cjs` para actualizar sus bloques integrados en `index.html`. El HTML generado funciona por sí solo. Al publicar una actualización, recarga con Ctrl+F5 para evitar una copia anterior del propio HTML.
+
+### Ventana y sensibilidad configurables
+
+Valores iniciales: 100 ticks, sensibilidad Frecuente y todos los umbrales (0–8). Las preferencias se guardan en localStorage. El modo frecuente es exploratorio: no exige significancia estadística y no promete rentabilidad. La señal principal se ordena por desviación estandarizada; Confidence corresponde a esa señal. Analizar varios umbrales puede mostrar flechas correlacionadas, no oportunidades independientes. Reducir la ventana descarta datos antiguos; aumentarla espera nuevos datos sin reiniciar la cuenta ni el contador de liquidación.
