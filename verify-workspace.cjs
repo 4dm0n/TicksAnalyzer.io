@@ -46,7 +46,9 @@ const server=http.createServer((req,res)=>{
  field('trade-thold','4');openTrade();const old=ws;old.onclose({code:1006});
  check('disconnect refund',!trade&&accountBalance===1000&&tradeHistory[0].status==='cancelled');
  stop();start();const tickSocket=ws;tickSocket.onmessage({data:JSON.stringify({tick:{quote:123.4,pip_size:2}})});check('trailing zero precision',ticks[0]===0);
- stop();document.getElementById('acc-balance').dispatchEvent(new MouseEvent('dblclick'));
+ stop();const balance=document.getElementById('acc-balance');balance.click();balance.click();
+ check('two clicks do not edit balance',!document.querySelector('.balance-input'));
+ balance.click();
  const edit=document.querySelector('.balance-input');edit.value='250';edit.dispatchEvent(new KeyboardEvent('keydown',{key:'Enter'}));
  check('balance edit reflected immediately',accountBalance===250&&document.getElementById('acc-balance').textContent==='$250.00');
  start();for(let i=0;i<200;i++)feed(i%10);

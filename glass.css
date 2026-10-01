@@ -82,8 +82,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-v
 .trade-history-table th,.trade-history-table td { padding:10px 8px; white-space:nowrap; }
 .trade-history-table tbody tr { background:var(--surface-inner); }
 .account-summary { padding:20px; margin-top:0; }
-.acc-edit-hint { opacity:1; min-height:44px; padding:8px; color:var(--text-muted); background:transparent; border:1px solid var(--edge); border-radius:10px; font-family:inherit; font-size:11px; }
-.acc-val { margin-left:auto; }
+.acc-val { margin-left:auto; cursor:default; touch-action:manipulation; }
+.acc-val:hover { color:var(--accent-cyan); text-shadow:none; }
 .balance-input { min-height:44px; font-size:16px; }
 .account-row { padding:9px 0; }
 .terminal-panel { flex:none; padding:20px; }

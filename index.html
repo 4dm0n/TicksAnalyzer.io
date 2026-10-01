@@ -1130,8 +1130,8 @@ button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-v
 .trade-history-table th,.trade-history-table td { padding:10px 8px; white-space:nowrap; }
 .trade-history-table tbody tr { background:var(--surface-inner); }
 .account-summary { padding:20px; margin-top:0; }
-.acc-edit-hint { opacity:1; min-height:44px; padding:8px; color:var(--text-muted); background:transparent; border:1px solid var(--edge); border-radius:10px; font-family:inherit; font-size:11px; }
-.acc-val { margin-left:auto; }
+.acc-val { margin-left:auto; cursor:default; touch-action:manipulation; }
+.acc-val:hover { color:var(--accent-cyan); text-shadow:none; }
 .balance-input { min-height:44px; font-size:16px; }
 .account-row { padding:9px 0; }
 .terminal-panel { flex:none; padding:20px; }
@@ -1340,8 +1340,7 @@ button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-v
                 <div class="account-title">Resumen de cuenta</div>
                 <div class="account-row">
                     <span class="acc-label">Saldo disponible</span>
-                    <span class="acc-val" id="acc-balance" title="Doble clic para editar">$1,000.00</span>
-                    <button class="acc-edit-hint" type="button" aria-label="Editar balance simulado" onclick="document.getElementById('acc-balance')?.dispatchEvent(new MouseEvent('dblclick'))">Editar</button>
+                    <span class="acc-val" id="acc-balance">$1,000.00</span>
                 </div>
                 <div class="account-row">
                     <span class="acc-label">PnL</span>
@@ -2198,7 +2197,19 @@ document.getElementById('trade-thold').addEventListener('change', function() {
     }
 });
 
-document.getElementById('acc-balance').addEventListener('dblclick', function() {
+let balanceTapCount = 0;
+let balanceTapStarted = 0;
+document.addEventListener('click', function(event) {
+    if (event.target.id !== 'acc-balance') balanceTapCount = 0;
+}, true);
+document.getElementById('acc-balance').addEventListener('click', function() {
+    const now = performance.now();
+    if (!balanceTapCount || now - balanceTapStarted > 900) {
+        balanceTapCount = 0;
+        balanceTapStarted = now;
+    }
+    if (++balanceTapCount < 3) return;
+    balanceTapCount = 0;
     if (balanceEditing || trade) { showToast('Espera a que termine la operación para editar el balance.'); return; }
     balanceEditing = true;
     const span = this;
@@ -2476,8 +2487,8 @@ const helpContent = {
     'theme-select': ['Tema', 'Cambia los colores de la interfaz. Los estados de las operaciones mantienen siempre azul, verde y rojo.', 'Ejemplo: White usa superficies claras; Ocean, tonos azules.'],
     'btn-martingala': ['Martingala', 'Duplica la siguiente apuesta tras perder y vuelve a la apuesta base al ganar. No aumenta la probabilidad de acierto. Se rechazan importes superiores al saldo disponible.', 'Ejemplo: base $2 → pérdida → siguiente apuesta $4.'],
     'btn-autobot': ['Bot automático', 'Solo abre operaciones simuladas al completar 200 ticks y existir una señal del umbral configurado. Usa la misma señal visible y nunca abre dos operaciones a la vez.', 'Ejemplo: flecha ↑ sobre 5 → operación OVER 5. Una señal histórica no garantiza rentabilidad.'],
-    'acc-balance': ['Saldo disponible', 'Saldo simulado libre después de reservar la operación abierta. PnL contiene solo resultados liquidados. Detener o perder la conexión anula la operación pendiente y devuelve su apuesta. El historial y la cuenta viven en esta pestaña; solo el orden y el tema se guardan.', 'Ejemplo: $100 disponibles, apuesta $10, pérdida → $90. Editar el saldo es un ajuste manual y no modifica el PnL.'],
-    'acc-pnl': ['PnL', 'Suma de ganancias y pérdidas liquidadas. No incluye apuestas abiertas ni ajustes manuales de saldo. Los pagos son teóricos del simulador, sin comisiones, y no cotizaciones reales de Deriv.', 'Ejemplo: +$10 y −$4 → PnL +$6.'],
+    'acc-balance': ['Saldo disponible', 'Saldo simulado libre después de reservar la operación abierta. PnL contiene solo resultados liquidados. Detener o perder la conexión anula la operación pendiente y devuelve su apuesta. El historial y la cuenta viven en esta pestaña; solo el orden y el tema se guardan.', 'Ejemplo: $100 disponibles, apuesta $10, pérdida → $90.'],
+    'acc-pnl': ['PnL', 'Suma de ganancias y pérdidas liquidadas. No incluye apuestas abiertas. Los pagos son teóricos del simulador, sin comisiones, y no cotizaciones reales de Deriv.', 'Ejemplo: +$10 y −$4 → PnL +$6.'],
     'acc-won': ['Ganadas', 'Número de operaciones liquidadas con resultado ganador. No cuenta operaciones abiertas ni anuladas.', 'Ejemplo: dos cierres ganadores → 2.'],
     'acc-lost': ['Perdidas', 'Número de operaciones liquidadas con resultado perdedor. Una cancelación no cuenta como pérdida.', 'Ejemplo: una pérdida y una anulación → 1.']
 };

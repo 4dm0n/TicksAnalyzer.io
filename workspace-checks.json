@@ -17,6 +17,7 @@
     "zero threshold preserved",
     "disconnect refund",
     "trailing zero precision",
+    "two clicks do not edit balance",
     "balance edit reflected immediately",
     "martingale loss uses configured base",
     "martingale reserves doubled stake",
@@ -226,7 +227,7 @@
   "live": {
     "ticks": 1,
     "connected": true,
-    "lastPrice": 4944.082
+    "lastPrice": 4942.932
   },
   "errors": []
 }
