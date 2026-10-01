@@ -1072,6 +1072,7 @@
 <div class="field field-trade-stake"><label for="trade-stake">Apuesta</label><input type="number" id="trade-stake" min="0.01" step="0.01" value="1.00" title="Monto de la apuesta"></div>
 <div class="field field-trade-tp"><label for="trade-tp">Take profit</label><input type="number" id="trade-tp" min="0" step="0.01" value="0" title="Take Profit: objetivo de beneficio acumulado (0 = sin límite)"></div>
 <div class="session-actions"><button id="btn-start" onclick="start()" title="Iniciar conexión WebSocket y análisis">Iniciar</button><button id="btn-stop" onclick="stop()" disabled title="Detener sesión y análisis">Detener</button></div>
+<div class="field field-confidence"><label for="confidence">Confidence · observada</label><input id="confidence" readonly value="—" aria-describedby="signal-explanation"></div>
 <div class="field field-theme-select"><label for="theme-select">Tema</label><select id="theme-select" title="Cambiar tema visual">
             <option value="matrix">Matrix</option>
             <option value="dark">Dark</option>
@@ -1102,7 +1103,12 @@
                     <div class="chart-legend" id="chart-legend-line"></div>
                 </div>
             </div>
-            <div class="stats-grid" id="stats-grid"></div>
+            <section class="signal-panel" aria-label="Señal de la ventana de ticks">
+<div class="signal-heading"><h3>◎ Ventana de señales</h3><span id="window-count">0 / 200 ticks</span></div>
+<progress id="window-progress" max="200" value="0" aria-label="Ticks recogidos"></progress>
+<div id="signal-digits" class="signal-digits"></div>
+<p id="signal-summary">Recopilando 200 ticks…</p><p id="signal-explanation">La frecuencia observada no garantiza el siguiente resultado.</p>
+</section><div class="stats-grid" id="stats-grid"></div>
         </div>
 
         <div class="right-panel">
@@ -1115,7 +1121,7 @@
                     <table class="trade-history-table" id="trade-history-table">
                         <thead>
                             <tr>
-                                <th>#</th>
+                                <th>#</th><th>Estado</th><th>Activo</th>
                                 <th>Tipo</th>
                                 <th>Umbral</th>
                                 <th>Precio Abierto</th>
@@ -1132,9 +1138,9 @@
             <div class="account-summary">
                 <div class="account-title">Resumen de cuenta</div>
                 <div class="account-row">
-                    <span class="acc-label">Balance</span>
+                    <span class="acc-label">Saldo disponible</span>
                     <span class="acc-val" id="acc-balance" title="Doble clic para editar">$1,000.00</span>
-                    <button class="acc-edit-hint" type="button" aria-label="Editar balance simulado" onclick="document.getElementById('acc-balance').dispatchEvent(new MouseEvent('dblclick'))">Editar</button>
+                    <button class="acc-edit-hint" type="button" aria-label="Editar balance simulado" onclick="document.getElementById('acc-balance')?.dispatchEvent(new MouseEvent('dblclick'))">Editar</button>
                 </div>
                 <div class="account-row">
                     <span class="acc-label">PnL</span>
@@ -1213,71 +1219,79 @@ const symbols = {
 };
 
 let ws = null;
+let totalTicks = 0;
+let connectionTimer = null;
+let retryTimer = null;
+let retries = 0;
+let sessionSymbol = 'R_10';
+let baseStake = 1;
+let latestSignal = null;
+const roundMoney = value => Math.round((value + Number.EPSILON) * 100) / 100;
 
 function start() {
-    stop();
-    ticks = [];
-    digitCounts = Array(10).fill(0);
-    priceHistory = [];
-    wins = 0;
-    losses = 0;
-    tradeCount = 0;
-    currentStreak = 0;
-    lastMartingalaStake = 1;
-    totalProfit = 0;
-    contractsWon = 0;
-    contractsLost = 0;
+    if (isRunning) return;
+    ticks = []; digitCounts = Array(10).fill(0); priceHistory = [];
+    totalTicks = 0; lastAnalysisTick = 0; currentPrice = 0; retries = 0;
+    sessionSymbol = document.getElementById('symbol').value;
     isRunning = true;
-
-    const sym = document.getElementById('symbol').value;
-    const symInfo = symbols[sym];
-
-    ws = new WebSocket('wss://api.derivws.com/trading/v1/options/ws/public');
-
-    ws.onopen = function() {
-        ws.send(JSON.stringify({
-            ticks: sym,
-            subscribe: 1
-        }));
-        log('<span class="green">Sesión iniciada: ' + symInfo.name + '</span>');
-        log('<span class="gray">Conectado a Deriv vía WebSocket público (sin OAuth, sin API key)</span>');
-    };
-
-    ws.onmessage = function(event) {
-        if (!isRunning) return;
-        const data = JSON.parse(event.data);
-
-        if (data.msg_type === 'tick' && data.tick) {
-            const quote = data.tick.quote;
-            const digit = parseInt(String(quote).slice(-1));
-
-            if (!isNaN(digit)) {
-                processTick(digit, quote);
-            }
-        }
-    };
-
-    ws.onerror = function(err) {
-        log('<span class="red">Error de conexión: ' + err.message + '</span>');
-    };
-
-    ws.onclose = function() {
-        if (isRunning) {
-            setTimeout(() => {
-                if (isRunning) start();
-            }, 2000);
-        }
-    };
-
+    document.getElementById('real-price').value = '';
     document.getElementById('btn-start').disabled = true;
-    document.getElementById('btn-start').classList.add('toggle-on');
     document.getElementById('btn-stop').disabled = false;
-    document.getElementById('btn-stop').classList.remove('toggle-on');
-    document.getElementById('btn-trade').disabled = false;
-    updateAccount();
+    document.getElementById('btn-trade').disabled = true;
+    updateDisplay();
+    connectStream();
+}
+
+function connectStream() {
+    if (!isRunning) return;
+    log('<span class="gray">Conectando a Deriv…</span>');
+    const socket = new WebSocket('wss://api.derivws.com/trading/v1/options/ws/public');
+    ws = socket;
+    connectionTimer = setTimeout(() => {
+        if (ws === socket) { log('<span class="red">Sin datos de Deriv durante 15 segundos.</span>'); socket.close(); }
+    }, 15000);
+    socket.onopen = () => {
+        if (ws !== socket || !isRunning) return;
+        socket.send(JSON.stringify({ticks: sessionSymbol, subscribe: 1}));
+    };
+    socket.onmessage = event => {
+        if (ws !== socket || !isRunning) return;
+        let data;
+        try { data = JSON.parse(event.data); } catch (_) { return; }
+        if (data.error || data.errors) {
+            const message = data.error?.message || data.errors?.[0]?.message || 'Solicitud rechazada';
+            showToast(message, 'error');
+            log('<span class="red">Deriv rechazó la solicitud. Consulta el aviso.</span>');
+            stop(); return;
+        }
+        if (!data.tick || !Number.isFinite(Number(data.tick.quote))) return;
+        clearTimeout(connectionTimer);
+        connectionTimer = setTimeout(() => { if (ws === socket) socket.close(); }, 30000);
+        if (!ticks.length) log('<span class="green">Recibiendo ticks de ' + symbols[sessionSymbol].name + '</span>');
+        retries = 0;
+        const quote = Number(data.tick.quote);
+        const precision = Number(data.tick.pip_size ?? symbols[sessionSymbol].decimals);
+        if (!Number.isInteger(precision) || precision < 0 || precision > 12) return;
+        symbols[sessionSymbol].decimals = precision;
+        processTick(Number(quote.toFixed(precision).slice(-1)), quote);
+        document.getElementById('btn-trade').disabled = !isRunning || ticks.length < 10;
+    };
+    socket.onerror = () => {
+        if (ws === socket) log('<span class="red">No se pudo conectar a Deriv. Comprueba la red, VPN o bloqueadores; el navegador no proporciona más detalles.</span>');
+    };
+    socket.onclose = event => {
+        if (ws !== socket || !isRunning) return;
+        clearTimeout(connectionTimer);
+        document.getElementById('btn-trade').disabled = true;
+        cancelOpenTrade('Conexión interrumpida');
+        if (++retries > 3) { stop(); showToast('Conexión no disponible. Pulsa Iniciar para reintentar.', 'error'); return; }
+        log('<span class="yellow">Conexión cerrada (' + event.code + '). Reintento ' + retries + '/3…</span>');
+        retryTimer = setTimeout(connectStream, Math.min(1000 * 2 ** retries, 8000));
+    };
 }
 
 function processTick(digit, quote) {
+    totalTicks++;
     ticks.push(digit);
     digitCounts[digit]++;
     priceHistory.push(quote);
@@ -1297,8 +1311,8 @@ function processTick(digit, quote) {
     updateDisplay();
     checkTrade(digit);
 
-    if (ticks.length - lastAnalysisTick >= 30) {
-        lastAnalysisTick = ticks.length;
+    if (totalTicks - lastAnalysisTick >= 30) {
+        lastAnalysisTick = totalTicks;
         updateAnalysis();
     }
 
@@ -1312,6 +1326,7 @@ function updateDisplay() {
     updateStats();
     updateTradeStatus();
     updateTradeDirectionInfo();
+    updateSignal();
 }
 
 function updateDigitsChart() {
@@ -1389,9 +1404,10 @@ function renderDonutChart(container) {
     const sliceColor = '#444';
     digitCounts.forEach((count, i) => {
         const pct = count / total;
+        if (!count) return;
         const largeArc = pct > 0.5 ? 1 : 0;
         const startAngle = (offset * 2 * Math.PI) - Math.PI / 2;
-        const endAngle = ((offset + pct) * 2 * Math.PI) - Math.PI / 2;
+        const endAngle = ((offset + Math.min(pct, .999999)) * 2 * Math.PI) - Math.PI / 2;
 
         const x1 = centerX + radius * Math.cos(startAngle);
         const y1 = centerY + radius * Math.sin(startAngle);
@@ -1399,6 +1415,12 @@ function renderDonutChart(container) {
         const y2 = centerY + radius * Math.sin(endAngle);
 
         const path = document.createElementNS(svgNS, 'path');
+        const innerRadius = 44;
+        const ix1 = centerX + innerRadius * Math.cos(startAngle);
+        const iy1 = centerY + innerRadius * Math.sin(startAngle);
+        const ix2 = centerX + innerRadius * Math.cos(endAngle);
+        const iy2 = centerY + innerRadius * Math.sin(endAngle);
+        path.setAttribute('d', `M ${x1} ${y1} A ${radius} ${radius} 0 ${largeArc} 1 ${x2} ${y2} L ${ix2} ${iy2} A ${innerRadius} ${innerRadius} 0 ${largeArc} 0 ${ix1} ${iy1} Z`);
         if (count > 0) {
             path.setAttribute('fill', colors[i]);
         } else {
@@ -1652,7 +1674,7 @@ function updateStats() {
 
     const even = ticks.filter(x => x % 2 === 0).length;
     const odd = ticks.length - even;
-    const thold = parseInt(document.getElementById('trade-thold').value) || 5;
+    const thold = Number(document.getElementById('trade-thold').value);
     const overThold = ticks.filter(x => x > thold).length;
     const underThold = ticks.length - overThold;
 
@@ -1706,71 +1728,39 @@ function updateQuickStats() {
     `;
 }
 
-function addTradeToHistory(trade, result, pnl, closePrice, digit) {
-    tradeHistory.unshift({
-        id: tradeCount,
-        type: trade.type,
-        thold: trade.thold,
-        openPrice: trade.price,
-        closePrice: closePrice,
-        digit: digit,
-        stake: trade.stake,
-        pnl: pnl,
-        won: result === 'won',
-        timestamp: new Date().toLocaleTimeString()
-    });
+function addTradeToHistory(item, status, pnl = null, closePrice = null, digit = null) {
+    let row = tradeHistory.find(t => t.id === item.id);
+    if (!row) { row = {id:item.id, type:item.type, thold:item.thold, openPrice:item.price, stake:item.stake, symbol:item.symbol}; tradeHistory.unshift(row); }
+    Object.assign(row, {status, pnl, closePrice, digit});
     renderTradeHistory();
 }
 
 function renderTradeHistory() {
-    const tbody = document.getElementById('trade-history-body');
-    if (!tbody) return;
-    if (tradeHistory.length === 0) {
-        tbody.innerHTML = '<tr><td colspan="8" style="text-align:center;color:var(--text-muted);padding:16px;">No hay operaciones en el historial</td></tr>';
-        return;
-    }
-    tbody.innerHTML = tradeHistory.map((t, i) => `
-        <tr class="${t.won ? 'won' : 'lost'}">
-            <td>${tradeHistory.length - i}</td>
-            <td class="type-${t.type}">${t.type.toUpperCase()}</td>
-            <td>$${t.thold}</td>
-            <td>${t.openPrice.toFixed(5)}</td>
-            <td>${t.closePrice.toFixed(5)}</td>
-            <td>${t.digit}</td>
-            <td>${t.stake.toFixed(2)}</td>
-            <td class="${t.won ? 'pnl-won' : 'pnl-lost'}">${t.won ? '+' : ''}${t.pnl.toFixed(2)}</td>
-        </tr>
-    `).join('');
+    const labels = {open:'↗ Abierta', won:'✓ Ganada', lost:'✕ Perdida', cancelled:'↶ Anulada'};
+    const cell = value => value == null ? '—' : value.toFixed(2);
+    document.getElementById('trade-history-body').innerHTML = tradeHistory.length ? tradeHistory.map(t =>
+        '<tr class="' + t.status + '"><td>' + t.id + '</td><td><span class="trade-state">' + labels[t.status] + '</span></td><td>' + t.symbol + '</td><td>' + t.type.toUpperCase() + '</td><td>' + t.thold + '</td><td>' + t.openPrice.toFixed(symbols[t.symbol].decimals) + '</td><td>' + (t.closePrice == null ? '—' : t.closePrice.toFixed(symbols[t.symbol].decimals)) + '</td><td>' + (t.digit ?? '—') + '</td><td>' + cell(t.stake) + '</td><td>' + (t.pnl > 0 ? '+' : '') + cell(t.pnl) + '</td></tr>'
+    ).join('') : '<tr><td colspan="10">No hay operaciones en el historial</td></tr>';
 }
 
 function clearTradeHistory() {
-    tradeHistory = [];
+    tradeHistory = tradeHistory.filter(t => t.status === 'open');
     renderTradeHistory();
     showToast('Historial borrado', 'info');
 }
 
 function updateTradeStatus() {
-    const statusEl = document.getElementById('trade-status');
-    const btnTrade = document.getElementById('btn-trade');
-    const type = document.getElementById('trade-type').value;
-    const thold = parseInt(document.getElementById('trade-thold').value) || 5;
-    const stake = parseFloat(document.getElementById('trade-stake').value) || 1;
-    const payoutMultiplier = getPayoutMultiplier(type, thold);
-    const winProb = getWinProbability(type, thold);
-    const expectedProfit = stake * (payoutMultiplier - 1);
-    
+    const el = document.getElementById('trade-status');
+    const button = document.getElementById('btn-trade');
     if (trade) {
-        const digit = trade.digit;
-        const tradeType = trade.type;
-        const tradeThold = trade.thold;
-        const won = tradeType === 'over' ? digit > tradeThold : digit <= tradeThold;
-        const resultClass = won ? 'green' : 'red';
-        const resultText = won ? 'GANAR' : 'PERDER';
-        if (statusEl) statusEl.innerHTML = `<span class="${resultClass}">${trade.direction} ${tradeType.toUpperCase()} $${tradeThold}</span> - Dígito: ${digit} - <span class="bold ${resultClass}">${resultText}</span>`;
-        if (btnTrade) { btnTrade.textContent = 'CERRAR'; }
+        el.textContent = '↗ Operación abierta · ' + trade.type.toUpperCase() + ' ' + trade.thold + ' · ' + Math.max(0, 3 - (totalTicks - trade.entryTick)) + ' ticks restantes';
+        button.textContent = 'Operación en curso';
     } else {
-        if (statusEl) statusEl.innerHTML = `<span class="cyan">Listo: ${type.toUpperCase()} $${thold}</span> <span class="gray">| Payout: ${payoutMultiplier.toFixed(2)}x | Prob: ${(winProb*100).toFixed(0)}% | Ganancia: $${expectedProfit.toFixed(2)}</span>`;
-        if (btnTrade) { btnTrade.textContent = 'Abrir operación ↗'; }
+        const n = Number(document.getElementById('trade-thold').value);
+        const type = document.getElementById('trade-type').value;
+        const p = getWinProbability(type, n);
+        el.textContent = Number.isInteger(n) && n >= 0 && n <= 9 && p > 0 && p < 1 ? 'Probabilidad teórica: ' + (p*100).toFixed(0) + '% · Simulación a 3 ticks' : 'Selecciona un umbral válido (sin resultados seguros o imposibles).';
+        button.textContent = 'Abrir operación ↗';
     }
 }
 
@@ -1788,76 +1778,29 @@ function updateTradeDirectionInfo() {
 }
 
 function openTrade() {
-    if (!isRunning) return;
-    if (trade) {
-        showToast('Ya hay una operación abierta', 'error');
-        return;
-    }
-    if (ticks.length < 10) {
-        showToast('Necesita más datos de ticks', 'error');
-        return;
-    }
-
-    const tholdInput = document.getElementById('trade-thold');
-    tholdInput.classList.remove('error');
-
-    let thold = parseInt(tholdInput.value);
+    if (!isRunning || trade || balanceEditing) return;
+    if (ticks.length < 10 || !ws || ws.readyState !== WebSocket.OPEN) { showToast('Espera a recibir al menos 10 ticks y tener conexión activa.', 'error'); return; }
     const type = document.getElementById('trade-type').value;
-    const price = currentPrice;
-    const stakeInput = document.getElementById('trade-stake');
-    let stake = parseFloat(stakeInput.value);
-    if (isNaN(stake) || stake <= 0) {
-        stake = martingala ? lastMartingalaStake : 1;
-        stakeInput.value = stake.toFixed(2);
-    } else if (martingala) {
-        stake = lastMartingalaStake;
-        stakeInput.value = stake.toFixed(2);
-    }
-    const tpInput = document.getElementById('trade-tp');
-    const tpTarget = parseFloat(tpInput.value) || 0;
-
-    const payoutMultiplier = getPayoutMultiplier(type, thold);
-    const expectedProfit = stake * (payoutMultiplier - 1);
-    const winProb = getWinProbability(type, thold);
-
-    trade = {
-        type: type,
-        thold: thold,
-        price: price,
-        digit: null,
-        stake: stake,
-        tp: tpTarget,
-        entryIndex: ticks.length,
-        entryTick: ticks.length,
-        direction: type === 'over' ? '📈' : '📉',
-        timestamp: new Date().toLocaleTimeString()
-    };
-
-    log(`<span class="cyan">▶ OPERACIÓN ABIERTA</span>: ${trade.direction} ${type.toUpperCase()} $${thold}`);
-    log(`<span class="gray">  Precio: ${price.toFixed(symbols[document.getElementById('symbol').value].decimals)} | Stake: ${trade.stake.toFixed(2)} 💰 | Payout: ${payoutMultiplier.toFixed(2)}x | Prob: ${(winProb*100).toFixed(0)}% | Esperado: $${expectedProfit.toFixed(2)} | TP: ${tpTarget > 0 ? '$' + tpTarget.toFixed(2) : '—'} | ${trade.timestamp}</span>`);
-    if (martingala) {
-        log(`<span class="yellow">  Martingala: ACTIVADA (stake base ${lastMartingalaStake.toFixed(2)})</span>`);
-    }
-
-    tradeCount++;
-    document.getElementById('btn-trade').textContent = 'CERRAR';
-    document.getElementById('btn-trade').onclick = closeTrade;
-    updateTradeDirectionInfo();
+    const n = Number(document.getElementById('trade-thold').value);
+    const enteredStake = Number(document.getElementById('trade-stake').value);
+    const tp = Number(document.getElementById('trade-tp').value);
+    if (document.getElementById('trade-thold').value === '' || !Number.isInteger(n) || n < 0 || n > 9 || getWinProbability(type,n) <= 0 || getWinProbability(type,n) >= 1) { showToast('Umbral inválido: evita resultados imposibles o seguros.', 'error'); return; }
+    if (!Number.isFinite(enteredStake) || enteredStake < .01 || !Number.isFinite(tp) || tp < 0) { showToast('Introduce apuesta y take profit válidos.', 'error'); return; }
+    if (!martingala || currentStreak >= 0) { baseStake = roundMoney(enteredStake); lastMartingalaStake = baseStake; }
+    const stake = roundMoney(martingala ? lastMartingalaStake : enteredStake);
+    if (!Number.isFinite(stake) || stake > accountBalance) { showToast('Saldo disponible insuficiente.', 'error'); return; }
+    accountBalance = roundMoney(accountBalance - stake);
+    trade = {id:++tradeCount, symbol:sessionSymbol, type, thold:n, price:currentPrice, digit:null, stake, tp, entryTick:totalTicks, direction:type === 'over' ? '↑' : '↓'};
+    addTradeToHistory(trade, 'open');
+    log('<span class="cyan">↗ Operación #' + trade.id + ' abierta · Apuesta reservada: ' + formatMoney(stake) + '</span>');
+    updateAccount(); updateTradeStatus(); updateTradeDirectionInfo();
 }
 
-function closeTrade() {
-    if (!trade) return;
-    if (trade.digit === null) {
-        showToast('Operación aún no resuelta', 'error');
-        return;
-    }
-    const won = trade.type === 'over' ? trade.digit > trade.thold : trade.digit <= trade.thold;
-    resolveTrade(won, trade.digit);
-}
+function closeTrade() { if (trade) showToast('Se liquida automáticamente al tercer tick.'); }
 
 function checkTrade(digit) {
     if (trade && trade.digit === null) {
-        const ticksSinceEntry = ticks.length - trade.entryTick;
+        const ticksSinceEntry = totalTicks - trade.entryTick;
         if (ticksSinceEntry >= 3) {
             trade.digit = digit;
             resolveTrade(trade.type === 'over' ? digit > trade.thold : digit <= trade.thold, digit);
@@ -1866,59 +1809,40 @@ function checkTrade(digit) {
 }
 
 function resolveTrade(won, digit) {
+    if (!trade) return;
+    const item = trade;
+    const profit = won ? roundMoney(calculatePayout(item.type, item.thold, item.stake)) : -item.stake;
     if (won) {
-        wins++;
-        contractsWon++;
-        currentStreak = currentStreak > 0 ? currentStreak + 1 : 1;
-        const profit = calculatePayout(trade.type, trade.thold, trade.stake);
-        totalProfit += profit;
-        accountBalance += profit;
-        const netTotal = wins - losses;
-
-        log(`<span class="green">✓ GANADA</span> | dígito ${digit} | Profit: ${profit.toFixed(2)} 💰 | Net: ${netTotal >= 0 ? '+' : ''}${netTotal}`);
-
-        if (martingala && currentStreak > 0) {
-            lastMartingalaStake = 1;
-        }
+        accountBalance = roundMoney(accountBalance + item.stake + profit);
+        wins++; contractsWon++; currentStreak = Math.max(currentStreak, 0) + 1;
+        lastMartingalaStake = baseStake;
     } else {
-        losses++;
-        contractsLost++;
-        currentStreak = currentStreak < 0 ? currentStreak - 1 : -1;
-        const loss = trade.stake;
-        totalProfit -= loss;
-        accountBalance -= loss;
-
-        if (martingala) {
-            lastMartingalaStake = trade.stake * 2;
-            log(`<span class="red">✗ PERDIDA</span> | dígito ${digit} | Pérdida: ${loss.toFixed(2)} 💰 | <span class="yellow">Martingala → ${lastMartingalaStake.toFixed(2)} 💰</span>`);
-        } else {
-            log(`<span class="red">✗ PERDIDA</span> | dígito ${digit} | Pérdida: ${loss.toFixed(2)} 💰`);
-        }
+        losses++; contractsLost++; currentStreak = Math.min(currentStreak, 0) - 1;
+        if (martingala) lastMartingalaStake = roundMoney(item.stake * 2);
     }
-
-    const pnl = won ? calculatePayout(trade.type, trade.thold, trade.stake) : -trade.stake;
-    addTradeToHistory(trade, won ? 'won' : 'lost', pnl, currentPrice, digit);
-
+    totalProfit = roundMoney(totalProfit + profit);
+    addTradeToHistory(item, won ? 'won' : 'lost', profit, currentPrice, digit);
     trade = null;
-    document.getElementById('btn-trade').textContent = 'Abrir operación ↗';
-    document.getElementById('btn-trade').onclick = openTrade;
-    const statusEl = document.getElementById('trade-status');
-    if (statusEl) statusEl.innerHTML = '<span class="cyan">Listo para operar</span>';
-    updateStats();
-    updateAccount();
-    updateTradeDirectionInfo();
-
-    if (trade && trade.tp > 0 && totalProfit >= trade.tp) {
-        // handled below in checkTakeProfit
-    }
+    log('<span class="' + (won ? 'green' : 'red') + '">' + (won ? '✓ Ganada' : '✕ Perdida') + ' #' + item.id + ' · PnL ' + formatMoney(profit) + '</span>');
+    updateAccount(); updateStats(); updateTradeStatus(); updateTradeDirectionInfo();
     checkTakeProfit();
 }
 
+function cancelOpenTrade(reason) {
+    if (!trade) return;
+    accountBalance = roundMoney(accountBalance + trade.stake);
+    addTradeToHistory(trade, 'cancelled', 0);
+    trade = null;
+    log('<span class="gray">' + reason + ': operación anulada y apuesta devuelta.</span>');
+    updateAccount(); updateTradeStatus();
+}
+
 function checkTakeProfit() {
-    const tp = parseFloat(document.getElementById('trade-tp').value) || 0;
+    const tp = Number(document.getElementById('trade-tp').value);
     if (tp > 0 && totalProfit >= tp) {
-        showToast('Take Profit alcanzado: +' + formatMoney(totalProfit));
-        log('<span class="yellow">🎯 TAKE PROFIT alcanzado (+' + formatMoney(totalProfit) + ') — Objetivo: $' + tp.toFixed(2) + '</span>');
+        if (autoTrade) toggleAutoBot();
+        stop();
+        showToast('Take profit alcanzado: ' + formatMoney(totalProfit));
     }
 }
 
@@ -1951,6 +1875,9 @@ function toggleMartingala() {
     martingala = !martingala;
     const btn = document.getElementById('btn-martingala');
     if (martingala) {
+        const entered = Number(document.getElementById('trade-stake').value);
+        baseStake = Number.isFinite(entered) && entered >= .01 ? roundMoney(entered) : 1;
+        lastMartingalaStake = baseStake;
         btn.textContent = 'ACTIVADO';
         btn.classList.add('toggle-on');
         log('<span class="green">✧ Martingala ACTIVADA</span>');
@@ -1976,89 +1903,22 @@ function toggleAutoBot() {
 }
 
 function evaluateAutoTrade() {
-    if (!autoTrade) return;
-    if (!isRunning) return;
-    if (trade) return;
-    if (ticks.length < 10) return;
-
-    const thold = parseInt(document.getElementById('trade-thold').value) || 5;
-    const total = ticks.length;
-    const overN = ticks.filter(x => x > thold).length;
-    const underN = total - overN;
-    const overP = overN / total;
-    const underP = underN / total;
-
-    let hot = 0, hotCount = 0;
-    digitCounts.forEach((c, i) => {
-        if (c > hotCount) { hotCount = c; hot = i; }
-    });
-    const hotP = hotCount / total;
-
-    let signalType = null;
-    let signalPct = 0;
-    let bestEV = 0;
-
-    const stake = martingala ? lastMartingalaStake : 1;
-    
-    // Evaluate EV for over
-    const overWinProb = overP;
-    const overPayout = getPayoutMultiplier('over', thold);
-    const overEV = overWinProb * stake * (overPayout - 1) - (1 - overWinProb) * stake;
-    
-    // Evaluate EV for under
-    const underWinProb = underP;
-    const underPayout = getPayoutMultiplier('under', thold);
-    const underEV = underWinProb * stake * (underPayout - 1) - (1 - underWinProb) * stake;
-
-    // Choose the one with positive EV and highest EV
-    if (overEV > 0 && overEV > bestEV) {
-        signalType = 'over';
-        signalPct = overP;
-        bestEV = overEV;
-    }
-    if (underEV > 0 && underEV > bestEV) {
-        signalType = 'under';
-        signalPct = underP;
-        bestEV = underEV;
-    }
-
-    // Fallback to hot digit strategy if no positive EV
-    if (!signalType && hotP > 0.20) {
-        if (hot > thold) { signalType = 'under'; signalPct = hotP; }
-        else { signalType = 'over'; signalPct = hotP; }
-    }
-
-    if (!signalType) return;
-
-    if (accountBalance < stake) {
-        showToast('Saldo insuficiente (' + formatMoney(accountBalance) + ')', 'error');
-        return;
-    }
-
-    document.getElementById('trade-type').value = signalType;
-    const te = document.getElementById('trade-type');
-    te.dispatchEvent(new Event('change'));
+    if (!autoTrade || !isRunning || trade || !latestSignal?.qualified) return;
+    document.getElementById('trade-type').value = latestSignal.type;
     openTrade();
-    log('<span class="yellow">🤖 BOT señal ' + signalType.toUpperCase() + ' $' + thold + ' (EV: $' + bestEV.toFixed(2) + ') → operación abierta @ $' + stake.toFixed(2) + '</span>');
 }
 
 function stop() {
+    const wasRunning = isRunning;
     isRunning = false;
-    if (ws) {
-        ws.close();
-        ws = null;
-    }
+    clearTimeout(connectionTimer); clearTimeout(retryTimer);
+    const socket = ws; ws = null;
+    if (socket) socket.close();
+    cancelOpenTrade('Sesión detenida');
     document.getElementById('btn-start').disabled = false;
-    document.getElementById('btn-start').classList.remove('toggle-on');
     document.getElementById('btn-stop').disabled = true;
-    document.getElementById('btn-stop').classList.add('toggle-on');
     document.getElementById('btn-trade').disabled = true;
-    if (trade) {
-        trade = null;
-        document.getElementById('btn-trade').textContent = 'Abrir operación ↗';
-        document.getElementById('btn-trade').onclick = openTrade;
-    }
-    log('<span class="yellow">Sesión detenida</span>');
+    if (wasRunning) log('<span class="yellow">Sesión detenida</span>');
 }
 
 function log(message, prepend = true) {
@@ -2089,55 +1949,8 @@ function showToast(message, type = '') {
 }
 
 function updateAnalysis() {
-    if (ticks.length < 5) return;
-
-    const total = ticks.length || 1;
-    let hot = 0, hotCount = 0;
-    let cold = 0, coldCount = Infinity;
-
-    digitCounts.forEach((c, i) => {
-        if (c > hotCount) { hotCount = c; hot = i; }
-        if (c < coldCount) { coldCount = c; cold = i; }
-    });
-
-    const even = ticks.filter(x => x % 2 === 0).length;
-    const odd = total - even;
-    const thold = parseInt(document.getElementById('trade-thold').value) || 5;
-    const overN = ticks.filter(x => x > thold).length;
-    const underN = total - overN;
-
-    const maxPct = hotCount / total;
-    const overPct = overN / total;
-    const underPct = underN / total;
-    const evenPct = even / total;
-    const oddPct = odd / total;
-
-    log('<span class="cyan">═══════════════════════════════</span>');
-    log('<span class="yellow">📊 ANÁLISIS DE MERCADO</span>');
-    log('<span class="cyan">═══════════════════════════════</span>');
-    log(`<span class="green">Hot digit:</span> ${hot} (${(maxPct*100).toFixed(1)}%) | <span class="gray">Cold: ${cold} (${(coldCount/total*100).toFixed(1)}%)</span>`);
-
-    if (maxPct > 0.20) {
-        log(`<span class="green">MATCH:</span> dígito ${hot} (<span class="bold">${(maxPct*100).toFixed(1)}%</span>) - Entrar <span class="yellow">DIFFER</span>`);
-    } else {
-        log('<span class="cyan">Mercado equilibrado - sin dígito dominante</span>');
-    }
-
-    if (overPct > 0.55) {
-        log(`<span class="green">OVER ${thold}</span> fuerte (${(overPct*100).toFixed(1)}%) - Considerar <span class="yellow">UNDER</span>`);
-    } else if (underPct > 0.55) {
-        log(`<span class="green">UNDER ${thold}</span> fuerte (${(underPct*100).toFixed(1)}%) - Considerar <span class="yellow">OVER</span>`);
-    } else {
-        log(`<span class="gray">Over/Under ${thold} balanceado</span>`);
-    }
-
-    if (evenPct > 0.55) {
-        log(`<span class="green">EVEN</span> dominante - Considerar <span class="yellow">ODD</span>`);
-    } else if (oddPct > 0.55) {
-        log(`<span class="green">ODD</span> dominante - Considerar <span class="yellow">EVEN</span>`);
-    }
-
-    log('<span class="cyan">═══════════════════════════════</span>');
+    updateSignal();
+    if (ticks.length === 200) log('<span class="gray">Ventana actualizada · Tick ' + totalTicks + ' · ' + (latestSignal?.qualified ? latestSignal.type.toUpperCase() + ' ' + latestSignal.n : 'Sin señal estadística') + '</span>');
 }
 
 document.getElementById('symbol').addEventListener('change', function() {
@@ -2174,7 +1987,7 @@ document.getElementById('trade-thold').addEventListener('change', function() {
         const type = document.getElementById('trade-type').value;
         if (ticks.length >= 5) {
             log('<span class="cyan">Umbral actualizado → ' + type.toUpperCase() + ' $' + thold + ' - Reanalizando...</span>');
-            lastAnalysisTick = Math.max(0, ticks.length - 31);
+            lastAnalysisTick = totalTicks;
             updateAnalysis();
         } else {
             log('<span class="cyan">Umbral actualizado: ' + type.toUpperCase() + ' $' + thold + '</span>');
@@ -2185,7 +1998,7 @@ document.getElementById('trade-thold').addEventListener('change', function() {
 });
 
 document.getElementById('acc-balance').addEventListener('dblclick', function() {
-    if (balanceEditing) return;
+    if (balanceEditing || trade) { showToast('Espera a que termine la operación para editar el balance.'); return; }
     balanceEditing = true;
     const span = this;
     const input = document.createElement('input');
@@ -2199,14 +2012,16 @@ document.getElementById('acc-balance').addEventListener('dblclick', function() {
     input.select();
 
     const finishEdit = () => {
+        if (!balanceEditing) return;
         const val = parseFloat(input.value);
-        if (!isNaN(val) && val >= 0) {
-            accountBalance = val;
+        if (Number.isFinite(val) && val >= 0) {
+            accountBalance = roundMoney(val);
             showToast('Balance actualizado: ' + formatMoney(val));
             updateAccount();
         }
         input.replaceWith(span);
         balanceEditing = false;
+        updateAccount();
     };
 
     input.addEventListener('keydown', function(e) {
@@ -2342,6 +2157,7 @@ function applyTheme(theme) {
     const vars = themes[theme] || themes.matrix;
     Object.keys(vars).forEach(k => root.style.setProperty(k, vars[k]));
     root.dataset.theme = themes[theme] ? theme : 'matrix';
+    document.getElementById('theme-select').value = root.dataset.theme;
     root.style.colorScheme = theme === 'white' ? 'light' : 'dark';
     try { localStorage.setItem('kiloTheme', root.dataset.theme); } catch (_) { /* Storage can be unavailable in private browsing. */ }
 }
@@ -2399,5 +2215,6 @@ if ('ResizeObserver' in window) {
 }
 </script>
 
+<script src="workspace.js"></script>
 </body>
 </html>

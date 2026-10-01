@@ -1,6 +1,6 @@
 # Moya Analyzer
 
-Un panel de análisis de ticks en tiempo real para índices sintéticos y pares de divisas de Deriv. Construido como un único archivo HTML con JavaScript vanilla, con conectividad WebSocket a la API pública de Deriv, gráficos interactivos y capacidades de trading simulado.
+Un panel de análisis de ticks en tiempo real para índices sintéticos y pares de divisas de Deriv. Construido con HTML, CSS y JavaScript vanilla, con conectividad WebSocket a la API pública de Deriv, gráficos interactivos y capacidades de trading simulado.
 
 ## Características
 
@@ -13,7 +13,7 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 ### Visualizaciones Interactivas
 - **Gráfico de Barras** - Distribución de dígitos con resaltado de calientes/fríos
 - **Gráfico Donut** - Distribución porcentual con tooltips al pasar ratón
-- **Gráfico de Línea** - Historial de movimiento de precios (últimos 50 ticks) con coloreado de tendencias
+- **Gráfico de Línea** - Secuencia de últimos dígitos (últimos 50 ticks)
 - **Cuadrícula de Estadísticas** - Dígitos Hot/Cold, ratios Par/Impar, umbrales Over/Under
 
 ### Trading Simulado
@@ -21,22 +21,24 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 - **Umbral configurable** (0-9) para entrada de operaciones
 - **Estrategia Martingala** con alternancia y duplicación automática de apuesta
 - **Simulación de cuenta** con balance, PnL, seguimiento de ganadas/perdidas
-- **Retraso de resolución de 3 ticks** para liquidación realista de contratos
+- **Retraso de resolución de 3 ticks** para liquidación en este simulador
 
-### Motor de Análisis de Mercado
-- **Detección automática de patrones** cada 30 ticks
-- **Alertas de dígito caliente** (>20% frecuencia dispara señal "MATCH")
-- **Detección de sesgo Over/Under** (>55% dispara sugerencia de contra-operación)
-- **Alertas de dominancia Par/Impar** con recomendaciones contrarianas
-- **Terminal de logs** con mensajes codificados por color (verde/rojo/cian/amarillo/gris)
+### Señales y workspace
+- La ventana conserva los últimos 200 ticks y se recalcula con cada tick. El contador total sigue avanzando sin límite de ventana.
+- Confidence muestra la frecuencia observada de la dirección analizada para el umbral seleccionado. No es una probabilidad predictiva de ganar.
+- Las flechas ↑ OVER / ↓ UNDER aparecen sobre el umbral cuando el límite inferior del intervalo Wilson del 95% supera la base teórica de esa dirección. Sin esa evidencia se muestra “Sin señal clara”. Las ventanas solapadas pueden generar señales por azar.
+- El bot espera 200 ticks y usa la misma señal visible.
+- Historial inmediato: abierta azul, ganada verde, perdida roja; anulada gris. Los colores semánticos se conservan en todos los temas.
+- Secciones reordenables por arrastre o botones ↑/↓, con orden guardado en localStorage. Cada campo dispone de ayuda modal con ejemplos e iconos SVG locales.
+- Historial y balance duran durante la pestaña; no se guardan al recargar. Tema y orden sí persisten cuando el navegador permite almacenamiento.
 
 ## Inicio Rápido
 
 1. Clona o descarga el repositorio
-2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari). Mantén `glass.css` en la misma carpeta.
+2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari). Mantén `glass.css` y `workspace.js` en la misma carpeta.
 3. Selecciona un activo del desplegable
 4. Haz clic en **Iniciar** para comenzar el análisis en vivo
-5. Configura parámetros de trade y haz clic en **ENTRAR** para operaciones simuladas
+5. Configura parámetros de trade y haz clic en **Abrir operación** para operaciones simuladas
 
 ## Activos Soportados
 
@@ -55,12 +57,12 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 - **Umbral**: Entero 0-9
 - **Martingala**: Duplica apuesta tras pérdida, resetea tras ganancia
 - **Apuesta base**: $1 (configurable vía Martingala)
-- **Payout**: 85% en ganancia, 100% pérdida en pérdida
+- **Payout**: multiplicador bruto teórico 10 / dígitos ganadores. Beneficio neto = apuesta × (multiplicador − 1), redondeado a centavos. No es una cotización real de Deriv.
 
 ## Detalles Técnicos
 
 ### Arquitectura
-- Aplicación HTML con JavaScript integrado (`index.html`) y capa visual en `glass.css`, sin compilación.
+- Aplicación HTML con JavaScript integrado (`index.html`) con `workspace.js` y capa visual en `glass.css`, sin compilación.
 - JavaScript ES6 vanilla (sin paso de build requerido)
 - CSS Grid/Flexbox para layout responsivo
 - Gráficos basados en SVG (sin librerías externas)
@@ -71,8 +73,8 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 - Paneles translúcidos, tipografía del sistema, controles táctiles y áreas seguras para pantallas con notch.
 - Distribución adaptable a móviles, tablets y escritorio; el historial conserva desplazamiento horizontal independiente.
 - Respeta movimiento reducido y usa fondos sólidos si el navegador no admite desenfoque.
-- Verificación en Chrome headless: 30 combinaciones de temas y anchos (320, 390, 768, 1024, 1440 y 1920 px), sin desbordamiento de página ni excepciones de JavaScript. Gráficos comprobados con datos sintéticos. Resultados en `ui-checks.json`.
-- Pendiente la validación física en Safari/iOS y Android; las pruebas no verifican la conexión externa de Deriv.
+- Verificación en Chrome headless: 30 combinaciones de temas y anchos (320, 390, 768, 1024, 1440 y 1920 px), sin desbordamiento de página ni excepciones de JavaScript. Gráficos comprobados con datos sintéticos. Resultados actualizados en `workspace-checks.json`.
+- Pendiente la validación física en Safari/iOS y Android; la recepción real de ticks de Deriv se comprobó en Chrome de escritorio.
 
 ### Flujo de Datos
 ```
@@ -90,10 +92,7 @@ ventana deslizante (200) → actualización gráficos + stats + resolución trad
 
 ## Compatibilidad de Navegadores
 
-- Chrome 80+
-- Firefox 75+
-- Edge 80+
-- Safari 14+
+- Versiones actuales de Chrome, Firefox, Edge y Safari (con soporte de dialog).
 - Requiere soporte WebSocket y ES6
 
 ## Notas de Seguridad
@@ -110,3 +109,15 @@ Esta herramienta es solo para **fines educativos y de análisis**. Los resultado
 ## Licencia
 
 Licencia MIT - Libre para usar, modificar y distribuir.
+
+## Cuenta, conexión y publicación
+
+La apuesta se reserva al abrir; al ganar se devuelve junto con el beneficio. La pérdida no vuelve a descontar la apuesta. Detener o perder la conexión anula la operación pendiente y devuelve la reserva. Reconectar no borra PnL, contadores ni historial. Take profit detiene la sesión y el bot. Se rechazan saldo insuficiente, entradas no finitas y resultados seguros/imposibles.
+
+Sube juntos **index.html**, **glass.css** y **workspace.js** a GitHub Pages, en la misma carpeta. El navegador necesita acceso a [WebSocket público de Deriv](https://developers.deriv.com/docs/options/ws-public/). Los errores ya no muestran undefined: incluyen un mensaje útil, código de cierre y hasta tres reintentos. La precisión de cada tick usa pip_size del proveedor; la tabla anterior solo refleja valores iniciales de respaldo.
+
+## Verificación
+
+25 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
+
+En Windows con Chrome instalado: Get-Content verify-workspace.cjs -Raw | node. CHROME_PATH permite indicar otro ejecutable compatible. Las pruebas usan los puertos locales 8765 y 9223 y un perfil aislado .ui-browser.

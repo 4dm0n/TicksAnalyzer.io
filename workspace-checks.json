@@ -1,0 +1,230 @@
+{
+  "checks": [
+    "200 ticks and neutral window",
+    "open is blue and reserves stake",
+    "not settled before third tick",
+    "win settles past tick 200 exactly once",
+    "duplicate settlement ignored",
+    "loss not debited twice",
+    "clearing history retains open trade",
+    "stop refunds and cancels",
+    "signal after warmup",
+    "rolling window keeps updating",
+    "insufficient funds blocked",
+    "impossible threshold blocked",
+    "zero threshold preserved",
+    "disconnect refund",
+    "trailing zero precision",
+    "balance edit reflected immediately",
+    "martingale loss uses configured base",
+    "martingale reserves doubled stake",
+    "under zero payout and martingale reset",
+    "take profit stops session",
+    "bot waits for 200 ticks",
+    "bot uses displayed signal",
+    "donut segments have visible geometry",
+    "help modal opens",
+    "section position stored"
+  ],
+  "restoredOrder": true,
+  "layout": [
+    {
+      "width": 320,
+      "theme": "matrix",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "theme": "purple",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "theme": "ocean",
+      "overflow": false
+    },
+    {
+      "width": 320,
+      "theme": "white",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "matrix",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "purple",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "ocean",
+      "overflow": false
+    },
+    {
+      "width": 390,
+      "theme": "white",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "theme": "matrix",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "theme": "purple",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "theme": "ocean",
+      "overflow": false
+    },
+    {
+      "width": 768,
+      "theme": "white",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "theme": "matrix",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "theme": "purple",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "theme": "ocean",
+      "overflow": false
+    },
+    {
+      "width": 1024,
+      "theme": "white",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "matrix",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "purple",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "ocean",
+      "overflow": false
+    },
+    {
+      "width": 1440,
+      "theme": "white",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "matrix",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "dark",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "purple",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "ocean",
+      "overflow": false
+    },
+    {
+      "width": 1920,
+      "theme": "white",
+      "overflow": false
+    }
+  ],
+  "colorChecks": [
+    {
+      "theme": "matrix",
+      "colors": [
+        "rgb(112, 181, 255)",
+        "rgb(88, 220, 145)",
+        "rgb(255, 124, 134)"
+      ]
+    },
+    {
+      "theme": "dark",
+      "colors": [
+        "rgb(112, 181, 255)",
+        "rgb(88, 220, 145)",
+        "rgb(255, 124, 134)"
+      ]
+    },
+    {
+      "theme": "purple",
+      "colors": [
+        "rgb(112, 181, 255)",
+        "rgb(88, 220, 145)",
+        "rgb(255, 124, 134)"
+      ]
+    },
+    {
+      "theme": "ocean",
+      "colors": [
+        "rgb(112, 181, 255)",
+        "rgb(88, 220, 145)",
+        "rgb(255, 124, 134)"
+      ]
+    },
+    {
+      "theme": "white",
+      "colors": [
+        "rgb(41, 121, 232)",
+        "rgb(22, 131, 72)",
+        "rgb(220, 53, 69)"
+      ]
+    }
+  ],
+  "live": {
+    "ticks": 1,
+    "connected": true,
+    "lastPrice": 4943.146
+  },
+  "errors": []
+}
