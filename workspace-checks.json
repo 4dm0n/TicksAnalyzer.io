@@ -1,5 +1,7 @@
 {
   "checks": [
+    "standalone HTML has no companion requests",
+    "embedded styles and icons load with companion files blocked",
     "200 ticks and neutral window",
     "open is blue and reserves stake",
     "not settled before third tick",
@@ -224,7 +226,7 @@
   "live": {
     "ticks": 1,
     "connected": true,
-    "lastPrice": 4943.146
+    "lastPrice": 4944.082
   },
   "errors": []
 }

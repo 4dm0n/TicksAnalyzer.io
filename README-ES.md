@@ -35,7 +35,7 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 ## Inicio Rápido
 
 1. Clona o descarga el repositorio
-2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari). Mantén `glass.css` y `workspace.js` en la misma carpeta.
+2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari). Los estilos, scripts e iconos ya están integrados: basta con este archivo.
 3. Selecciona un activo del desplegable
 4. Haz clic en **Iniciar** para comenzar el análisis en vivo
 5. Configura parámetros de trade y haz clic en **Abrir operación** para operaciones simuladas
@@ -114,10 +114,14 @@ Licencia MIT - Libre para usar, modificar y distribuir.
 
 La apuesta se reserva al abrir; al ganar se devuelve junto con el beneficio. La pérdida no vuelve a descontar la apuesta. Detener o perder la conexión anula la operación pendiente y devuelve la reserva. Reconectar no borra PnL, contadores ni historial. Take profit detiene la sesión y el bot. Se rechazan saldo insuficiente, entradas no finitas y resultados seguros/imposibles.
 
-Sube juntos **index.html**, **glass.css** y **workspace.js** a GitHub Pages, en la misma carpeta. El navegador necesita acceso a [WebSocket público de Deriv](https://developers.deriv.com/docs/options/ws-public/). Los errores ya no muestran undefined: incluyen un mensaje útil, código de cierre y hasta tres reintentos. La precisión de cada tick usa pip_size del proveedor; la tabla anterior solo refleja valores iniciales de respaldo.
+Sube **index.html** a GitHub Pages. Incluye estilos, iconos SVG y lógica del workspace; no depende de cargar glass.css ni workspace.js por separado. El navegador necesita acceso a [WebSocket público de Deriv](https://developers.deriv.com/docs/options/ws-public/). Los errores ya no muestran undefined: incluyen un mensaje útil, código de cierre y hasta tres reintentos. La precisión de cada tick usa pip_size del proveedor; la tabla anterior solo refleja valores iniciales de respaldo.
 
 ## Verificación
 
-25 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
+27 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
 
 En Windows con Chrome instalado: Get-Content verify-workspace.cjs -Raw | node. CHROME_PATH permite indicar otro ejecutable compatible. Las pruebas usan los puertos locales 8765 y 9223 y un perfil aislado .ui-browser.
+
+### Actualización de estilos e iconos
+
+`glass.css` y `workspace.js` se conservan como fuentes editables. Después de modificarlos, ejecuta `node sync-assets.cjs` para actualizar sus bloques integrados en `index.html`. El HTML generado funciona por sí solo. Al publicar una actualización, recarga con Ctrl+F5 para evitar una copia anterior del propio HTML.

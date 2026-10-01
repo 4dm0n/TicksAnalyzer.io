@@ -1,6 +1,6 @@
 # Moya Analyzer
 
-The glassmorphic interface uses `glass.css` alongside `index.html`. Keep index.html, glass.css and workspace.js in the same folder; no build step or framework is required. The existing Matrix, Dark, Purple, Ocean and White themes support phone, tablet and desktop layouts.
+The glassmorphic interface uses `glass.css` alongside `index.html`. Styles and workspace code are embedded in index.html, so only that HTML is needed for deployment. No framework is required. The existing Matrix, Dark, Purple, Ocean and White themes support phone, tablet and desktop layouts.
 
 A real-time tick analysis dashboard for Deriv synthetic indices and forex pairs. Built with HTML, CSS and vanilla JavaScript, featuring WebSocket connectivity to Deriv's public API, interactive charts, and simulated trading capabilities.
 
@@ -108,8 +108,12 @@ MIT License - Feel free to use, modify, and distribute.
 
 Opening reserves the stake. Wins return the stake plus net profit; losses never debit it twice. Stopping or disconnecting cancels the pending trade and refunds the stake. Reconnecting preserves PnL, counts and history. Take profit stops both the session and bot.
 
-Deploy **index.html**, **glass.css** and **workspace.js** together in the same GitHub Pages folder. The app uses the [Deriv public WebSocket](https://developers.deriv.com/docs/options/ws-public/), displays actionable connection errors and retries up to three times. Tick precision follows provider pip_size; the decimals table above lists initial fallback values only.
+Deploy **index.html** to GitHub Pages. Styles, SVG icons and workspace logic are embedded, so missing or stale companion assets cannot change the UI. The app uses the [Deriv public WebSocket](https://developers.deriv.com/docs/options/ws-public/), displays actionable connection errors and retries up to three times. Tick precision follows provider pip_size; the decimals table above lists initial fallback values only.
 
 ## Verification
 
-25 functional checks, persisted ordering, 30 theme/viewport combinations and a real read-only Deriv tick connection passed in desktop Chrome. See workspace-checks.json. Physical iOS/Android validation remains pending. Run Get-Content verify-workspace.cjs -Raw | node on Windows with Chrome; CHROME_PATH can override the executable. Tests use ports 8765/9223 and the isolated .ui-browser profile.
+27 functional checks, persisted ordering, 30 theme/viewport combinations and a real read-only Deriv tick connection passed in desktop Chrome. See workspace-checks.json. Physical iOS/Android validation remains pending. Run Get-Content verify-workspace.cjs -Raw | node on Windows with Chrome; CHROME_PATH can override the executable. Tests use ports 8765/9223 and the isolated .ui-browser profile.
+
+### Updating embedded assets
+
+`glass.css` and `workspace.js` remain editable sources. After changing them, run `node sync-assets.cjs` to synchronize their embedded blocks in `index.html`. The resulting HTML works on its own. Hard-refresh after publishing to bypass an older cached HTML document.

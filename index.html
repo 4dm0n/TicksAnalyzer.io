@@ -1044,7 +1044,204 @@
         .stats-grid{ font-size:11px; }
     }
 </style>
-<link rel="stylesheet" href="glass.css">
+<!-- embedded:glass.css:start -->
+<style data-source="glass.css">
+/* Presentation layer. HTML and vanilla JavaScript remain build-free. */
+:root {
+    --surface: rgba(23, 37, 36, .72);
+    --surface-solid: #172524;
+    --surface-inner: rgba(255,255,255,.035);
+    --edge: rgba(223,255,244,.14);
+    --ambient-a: rgba(37,169,119,.23);
+    --ambient-b: rgba(65,105,168,.18);
+    --soft-shadow: 0 16px 48px rgba(0,0,0,.14), inset 0 1px 0 rgba(255,255,255,.08);
+}
+:root[data-theme="dark"] { --surface:rgba(32,34,43,.74); --surface-solid:#20222b; --ambient-a:rgba(98,112,151,.25); --ambient-b:rgba(76,65,121,.2); --edge:rgba(255,255,255,.13); }
+:root[data-theme="purple"] { --surface:rgba(43,32,64,.72); --surface-solid:#2b2040; --ambient-a:rgba(150,83,225,.28); --ambient-b:rgba(215,93,165,.15); --edge:rgba(220,196,255,.18); }
+:root[data-theme="ocean"] { --surface:rgba(20,49,68,.72); --surface-solid:#143144; --ambient-a:rgba(26,167,212,.26); --ambient-b:rgba(53,103,212,.23); --edge:rgba(170,227,255,.18); }
+:root[data-theme="white"] { --surface:rgba(255,255,255,.7); --surface-solid:#f5f8fb; --surface-inner:rgba(255,255,255,.48); --ambient-a:rgba(103,187,184,.22); --ambient-b:rgba(151,161,226,.25); --edge:rgba(255,255,255,.9); --soft-shadow:0 16px 48px rgba(47,72,108,.08),inset 0 1px 0 #fff; }
+html { height:auto; min-height:100%; }
+body { height:auto; min-height:100vh; min-height:100dvh; font-family:-apple-system,BlinkMacSystemFont,"Segoe UI",sans-serif; font-size:14px; line-height:1.5; letter-spacing:-.015em; }
+body::before { background:radial-gradient(ellipse at 8% 0%,var(--ambient-a),transparent 60%),radial-gradient(ellipse at 95% 45%,var(--ambient-b),transparent 65%); }
+.container { display:flex; flex-direction:column; gap:22px; height:auto; min-height:100vh; min-height:100dvh; max-width:1680px; margin:0 auto; overflow:visible; padding:calc(28px + env(safe-area-inset-top)) calc(32px + env(safe-area-inset-right)) calc(28px + env(safe-area-inset-bottom)) calc(32px + env(safe-area-inset-left)); }
+.app-header,.brand,.section-intro { display:flex; align-items:center; justify-content:space-between; gap:16px; }
+.app-header { padding:0 2px 20px; border-bottom:1px solid var(--edge); }
+.brand { justify-content:flex-start; gap:12px; }
+.brand-icon { display:grid; place-items:center; width:46px; height:46px; border:1px solid var(--edge); background:var(--surface); border-radius:15px; color:var(--accent-cyan); font-size:30px; box-shadow:var(--soft-shadow); }
+.eyebrow { color:var(--text-muted); font-size:9px; letter-spacing:.18em; font-weight:600; }
+h1 { font-size:22px; line-height:1.25; letter-spacing:-.04em; font-weight:650; }
+.brand-dot { color:var(--accent-cyan); }
+.workspace-badge { display:flex; align-items:center; gap:8px; padding:7px 12px; border:1px solid var(--edge); border-radius:30px; background:var(--surface-inner); font-size:12px; color:var(--text-muted); }
+.workspace-badge span { width:6px; height:6px; border-radius:50%; background:var(--accent-cyan); }
+.section-intro { margin:4px 0; }
+.section-intro h2 { font-size:clamp(23px,2.4vw,34px); font-weight:600; letter-spacing:-.045em; }
+.section-intro p { color:var(--text-muted); margin-top:4px; font-size:13px; }
+.intro-caption { color:var(--text-muted); font-size:10px; letter-spacing:.15em; }
+.top-bar,.digits-panel,.trade-history-panel,.account-summary,.terminal-panel,.controls-bottom { background:var(--surface); border:1px solid var(--edge); border-radius:24px; box-shadow:var(--soft-shadow); backdrop-filter:blur(24px) saturate(135%); -webkit-backdrop-filter:blur(24px) saturate(135%); }
+.top-bar { display:grid; grid-template-columns:1.4fr 1.2fr 1fr .65fr .8fr .8fr 1.4fr 1fr; gap:12px; padding:20px; align-items:end; }
+.field { min-width:0; display:flex; flex-direction:column; gap:6px; }
+.top-bar label { font-size:11px; color:var(--text-muted); padding-left:3px; }
+.top-bar input,.top-bar select,.top-bar select#theme-select,.top-bar button,button.toggle-btn,#btn-trade { font-family:inherit; font-size:14px; min-height:44px; border-radius:12px; box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+.top-bar input,.top-bar select,.top-bar select#theme-select { width:100%; min-width:0; background:var(--surface-inner); border:1px solid var(--edge); color:var(--text); padding:10px; }
+.top-bar select,.top-bar select#theme-select { appearance:auto; -webkit-appearance:menulist; padding-right:5px; }
+select option { background:var(--surface-solid); color:var(--text); }
+input { font-variant-numeric:tabular-nums; }
+.session-actions { display:flex; gap:6px; }
+.session-actions button { flex:1; padding:10px; }
+#btn-start,#btn-trade { background:var(--accent-cyan); color:#081713; border:1px solid transparent; font-weight:650; }
+:root[data-theme="white"] #btn-start,:root[data-theme="white"] #btn-trade { color:white; }
+button { cursor:pointer; touch-action:manipulation; }
+button:disabled,.top-bar button:disabled { opacity:.4; cursor:not-allowed; transform:none; box-shadow:none; }
+button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-visible { outline:2px solid var(--accent-cyan); outline-offset:4px; }
+.trade-direction-info { grid-column:1 / 4; min-width:0; font-size:11px; }
+#trade-status { grid-column:4 / -1; text-align:right; font-size:11px; min-width:0; overflow-wrap:anywhere; }
+.main { grid-template-columns:minmax(0,1.65fr) minmax(0,1fr); gap:20px; height:auto; overflow:visible; align-items:start; }
+.main > *, .right-panel > * { min-width:0; }
+.digits-panel { height:auto; padding:22px; gap:20px; overflow:visible; }
+.chart-title-bar { color:var(--text); display:flex; align-items:center; justify-content:space-between; flex-wrap:wrap; gap:6px; font-size:16px; font-weight:600; padding-bottom:16px; }
+.panel-caption { font-size:11px; color:var(--text-muted); font-weight:400; }
+.charts-row { grid-template-columns:minmax(0,1.2fr) minmax(0,1fr); grid-auto-rows:auto; height:auto; flex:none; gap:20px; margin:0; overflow:visible; }
+.chart-section { min-width:0; height:auto; gap:8px; }
+.chart-section:last-child { grid-column:1 / -1; }
+.chart-subtitle { font-size:12px; text-align:left; color:var(--text-muted); margin:0; font-weight:500; }
+.chart-container,.chart-container.bar-chart,.chart-container.donut-chart,.chart-container.line-chart { height:220px; min-height:220px; flex:none; border:1px solid var(--edge); background:var(--surface-inner); border-radius:16px; overflow:hidden; backdrop-filter:none; -webkit-backdrop-filter:none; }
+.chart-container.bar-chart { padding:32px 12px 28px; gap:6px; }
+.digit-bar { min-width:0; flex:1; }
+.bar { width:100%; max-width:32px; background:var(--accent-cyan); opacity:.65; border-radius:5px 5px 0 0; }
+.bar.hot { background:var(--hot); box-shadow:none; opacity:1; }
+.bar.cold { background:var(--cold); opacity:.7; }
+.bar-count { text-shadow:none; }
+.chart-container.donut-chart svg { max-height:190px; }
+.chart-container:hover,.stat-box:hover,.digits-panel:hover,.trade-history-panel:hover,.terminal-panel:hover { box-shadow:var(--soft-shadow); border-color:var(--edge); transform:none; }
+.chart-legend { font-size:10px; color:var(--text-muted); gap:5px 10px; }
+.empty-text { color:var(--text-muted); opacity:1; }
+.stats-grid { grid-template-columns:repeat(4,minmax(0,1fr)); gap:10px; margin:0; }
+.stat-box { padding:14px 6px; border-radius:15px; background:var(--surface-inner); border:1px solid var(--edge); box-shadow:none; backdrop-filter:none; -webkit-backdrop-filter:none; }
+.stat-box .val { font-size:22px; font-weight:600; font-variant-numeric:tabular-nums; }
+.stat-box .lbl { font-size:9px; letter-spacing:.07em; margin-top:4px; }
+.right-panel { height:auto; overflow:visible; gap:20px; }
+.trade-history-panel { flex:none; padding:18px; overflow:hidden; }
+.trade-history-header h3,.account-title,.terminal-title { font-size:14px; font-weight:600; color:var(--text); letter-spacing:0; }
+.trade-history-header { margin:0 0 10px; }
+.clear-btn { width:44px; min-height:44px; border-radius:12px; }
+.trade-history-table-wrapper { overflow:auto; max-height:240px; min-height:110px; }
+.trade-history-table { min-width:550px; font-size:11px; font-variant-numeric:tabular-nums; }
+.trade-history-table th { color:var(--text-muted); background:var(--surface-solid); font-size:9px; }
+.trade-history-table th,.trade-history-table td { padding:10px 8px; white-space:nowrap; }
+.trade-history-table tbody tr { background:var(--surface-inner); }
+.account-summary { padding:20px; margin-top:0; }
+.acc-edit-hint { opacity:1; min-height:44px; padding:8px; color:var(--text-muted); background:transparent; border:1px solid var(--edge); border-radius:10px; font-family:inherit; font-size:11px; }
+.acc-val { margin-left:auto; }
+.balance-input { min-height:44px; font-size:16px; }
+.account-row { padding:9px 0; }
+.terminal-panel { flex:none; padding:20px; }
+.terminal-output { height:180px; flex:none; font-family:ui-monospace,SFMono-Regular,Consolas,monospace; font-size:11px; }
+.terminal-output:empty::before { content:'La sesión aún no ha comenzado.\ASelecciona un activo y pulsa Iniciar.'; display:block; padding:22px 0; white-space:pre-line; color:var(--text-muted); line-height:1.9; }
+.terminal-line .cyan,.cyan { color:var(--accent-cyan); }
+.terminal-line .red,.red { color:var(--accent-pink); }
+.terminal-line .yellow,.yellow { color:var(--accent-yellow); }
+.terminal-line .gray,.gray { color:var(--text-muted); }
+:root[data-theme="white"] .terminal-line .yellow { color:#956400; }
+.controls-bottom { padding:16px 20px; margin:0; gap:16px; }
+.controls-left { flex-direction:row; gap:12px; }
+.controls-left label { font-size:12px; color:var(--text-muted); }
+.controls-right { flex-wrap:wrap; gap:18px; }
+.toggle-btn { width:auto; background:var(--surface-inner); border-color:var(--edge); padding:10px 12px; }
+#btn-trade { padding:10px 24px; }
+.quick-stats { flex-direction:row; flex-wrap:wrap; gap:12px; font-size:11px; }
+.tooltip .tooltip-text { white-space:normal; width:150px; max-width:70vw; left:0; transform:none; background:var(--surface-solid); color:var(--text); border-color:var(--edge); box-shadow:var(--soft-shadow); }
+.tooltip:hover .tooltip-text { transform:none; }
+.toast { max-width:calc(100vw - 32px); overflow-wrap:anywhere; bottom:calc(24px + env(safe-area-inset-bottom)); }
+@media(min-width:1600px) { .chart-container,.chart-container.bar-chart,.chart-container.donut-chart { height:250px; } }
+@media(max-width:1200px) {
+    .top-bar { grid-template-columns:repeat(4,minmax(0,1fr)); }
+    .trade-direction-info { grid-column:1 / 3; } #trade-status { grid-column:3 / -1; }
+    .main { grid-template-columns:minmax(0,1fr); grid-auto-rows:auto; }
+    .right-panel { display:grid; grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .trade-history-panel { grid-column:1 / -1; }
+    .trade-history-table { min-width:550px; }
+}
+@media(max-width:700px) {
+    .container { gap:16px; padding:calc(18px + env(safe-area-inset-top)) calc(16px + env(safe-area-inset-right)) calc(20px + env(safe-area-inset-bottom)) calc(16px + env(safe-area-inset-left)); }
+    .app-header { padding-bottom:16px; } h1 { font-size:20px; }
+    .workspace-badge { font-size:10px; padding:6px 9px; } .intro-caption { display:none; }
+    .top-bar { grid-template-columns:repeat(2,minmax(0,1fr)); padding:16px; gap:12px; }
+    .top-bar input,.top-bar select,.top-bar select#theme-select { font-size:16px; }
+    .field-symbol { grid-column:1 / -1; }
+    .field-theme-select { grid-row:1; grid-column:2; }
+    .field-symbol { grid-row:1; grid-column:1; }
+    .session-actions { grid-column:1 / -1; }
+    .trade-direction-info,#trade-status { grid-column:1 / -1; text-align:left; }
+    .main { gap:16px; } .digits-panel { padding:16px; gap:16px; }
+    .charts-row { grid-template-columns:minmax(0,1fr); gap:18px; }
+    .chart-section:last-child { grid-column:auto; }
+    .stats-grid { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .right-panel { display:flex; gap:16px; }
+    .controls-bottom { flex-direction:column; align-items:stretch; padding:16px; }
+    .controls-left { display:grid; grid-template-columns:1fr 1fr; width:100%; }
+    .controls-right { width:100%; } #btn-trade { width:100%; }
+    .quick-stats { display:grid; grid-template-columns:1fr 1fr; width:100%; gap:10px; }
+    .chart-title-bar { font-size:15px; }
+}
+@media(prefers-reduced-motion:reduce) { *,*::before,*::after { transition:none !important; animation:none !important; scroll-behavior:auto !important; } }
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) {
+    .top-bar,.digits-panel,.trade-history-panel,.account-summary,.terminal-panel,.controls-bottom { background:var(--surface-solid); }
+}
+
+/* Workspace, signal window and semantic operation states. */
+.main { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.digits-panel { grid-column:1 / -1; }
+.charts-row { grid-template-columns:repeat(2,minmax(0,1fr)); }
+.top-bar { grid-template-columns:repeat(5,minmax(0,1fr)); }
+.trade-direction-info,#trade-status { grid-column:auto / span 2; }
+.signal-panel { min-width:0; padding:20px; background:var(--surface); border:1px solid var(--edge); border-radius:24px; box-shadow:var(--soft-shadow); backdrop-filter:blur(24px); -webkit-backdrop-filter:blur(24px); }
+.signal-heading { display:flex; flex-wrap:wrap; align-items:center; justify-content:space-between; gap:10px; }
+.signal-heading h3 { font-size:15px; } #window-count { font-size:12px; color:var(--text-muted); }
+#window-progress { width:100%; height:6px; accent-color:var(--accent-cyan); margin:16px 0; }
+.signal-digits { display:grid; grid-template-columns:repeat(10,minmax(0,1fr)); gap:5px; }
+.signal-digit { display:flex; flex-direction:column; align-items:center; border:1px solid var(--edge); border-radius:10px; padding:5px 0; min-width:0; }
+.signal-digit strong { font-size:22px; }.signal-digit small { font-size:10px; color:var(--text-muted); }
+.signal-arrow { font-size:20px; height:30px; }.signal-digit.suggested { border-color:var(--accent-cyan); color:var(--accent-cyan); background:var(--surface-inner); }
+#signal-summary { font-size:17px; font-weight:600; margin-top:18px; }
+#signal-explanation { margin-top:10px; font-size:12px; line-height:1.7; color:var(--text-muted); }
+.field-label { display:flex; align-items:center; justify-content:space-between; gap:4px; }
+.info-button,.top-bar .info-button { display:inline-grid; place-items:center; width:28px; height:28px; min-height:28px; padding:0; flex-shrink:0; font-family:Georgia,serif; font-weight:bold; border:1px solid var(--edge); border-radius:50%; background:var(--surface-inner); color:var(--text-muted); }
+.controls-left .field-label { justify-content:flex-start; }
+.help-dialog { margin:auto; width:min(520px,calc(100% - 32px)); max-height:80dvh; overflow:auto; padding:28px; border-radius:24px; border:1px solid var(--edge); background:var(--surface-solid); color:var(--text); box-shadow:var(--soft-shadow); }
+.help-dialog::backdrop { background:rgba(0,0,0,.55); backdrop-filter:blur(5px); }
+.help-dialog h2 { font-size:21px; padding-right:25px; }.help-dialog p { margin-top:16px; line-height:1.7; }
+#help-example { color:var(--text-muted); background:var(--surface-inner); padding:14px; border-radius:14px; }
+.help-close { position:absolute; right:12px; top:12px; width:44px; height:44px; border:none; background:transparent; color:var(--text); font-size:18px; }
+.section-tools { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; color:var(--text-muted); font-size:11px; }
+.section-tools > div { display:flex; gap:4px; }.section-tools button { width:36px; min-height:36px; border:1px solid var(--edge); border-radius:10px; background:var(--surface-inner); color:var(--text); font-size:17px; }
+.drag-handle { cursor:grab; }.drop-target { outline:2px dashed var(--accent-cyan); outline-offset:3px; }
+.ui-icon { width:18px; height:18px; vertical-align:middle; pointer-events:none; }
+.section-tools button { display:inline-grid; place-items:center; }
+.trade-history-table { min-width:760px; }
+.trade-history-table tr.open { --state:#2979e8; background:rgba(41,121,232,.09); }
+.trade-history-table tr.won { --state:#168348; background:rgba(22,131,72,.09); }
+.trade-history-table tr.lost { --state:#dc3545; background:rgba(220,53,69,.09); }
+.trade-history-table tr.cancelled { --state:#73839b; }
+:root:not([data-theme="white"]) .trade-history-table tr.open { --state:#70b5ff; }
+:root:not([data-theme="white"]) .trade-history-table tr.won { --state:#58dc91; }
+:root:not([data-theme="white"]) .trade-history-table tr.lost { --state:#ff7c86; }
+.trade-history-table tr.open td,.trade-history-table tr.won td,.trade-history-table tr.lost td,.trade-history-table tr.cancelled td { color:var(--state); border-left:0; }
+.trade-history-table tr td:first-child { border-left:3px solid var(--state); }
+.trade-state { font-weight:650; }
+@media(max-width:1100px) { .top-bar { grid-template-columns:repeat(3,minmax(0,1fr)); } .signal-digits { grid-template-columns:repeat(5,minmax(0,1fr)); } }
+@media(max-width:700px) {
+    .main { grid-template-columns:minmax(0,1fr); }.digits-panel { grid-column:auto; }
+    .charts-row { grid-template-columns:minmax(0,1fr); }
+    .top-bar { grid-template-columns:repeat(2,minmax(0,1fr)); }
+    .trade-direction-info,#trade-status { grid-column:1 / -1; }
+    .signal-panel { padding:16px; }.section-tools button { min-height:44px; width:44px; }
+    .top-bar .info-button,.info-button { width:44px; min-height:44px; }
+    .account-row { gap:6px; }.account-row .field-label { font-size:11px; }
+}
+@supports not ((backdrop-filter:blur(1px)) or (-webkit-backdrop-filter:blur(1px))) { .signal-panel { background:var(--surface-solid); } }
+
+</style>
+<!-- embedded:glass.css:end -->
 </head>
 <body>
 
@@ -2215,6 +2412,174 @@ if ('ResizeObserver' in window) {
 }
 </script>
 
-<script src="workspace.js"></script>
+<!-- embedded:workspace.js:start -->
+<script data-source="workspace.js">
+/* Local workspace controls; no framework, external icon font or account needed. */
+function wilsonInterval(successes, count) {
+    if (!count) return [0, 1];
+    const z = 1.96, p = successes / count, denominator = 1 + z*z/count;
+    const centre = (p + z*z/(2*count)) / denominator;
+    const margin = z * Math.sqrt(p*(1-p)/count + z*z/(4*count*count)) / denominator;
+    return [Math.max(0, centre-margin), Math.min(1, centre+margin)];
+}
+
+function updateSignal() {
+    const count = ticks.length;
+    const raw = document.getElementById('trade-thold').value;
+    const n = Number(raw);
+    const valid = raw !== '' && Number.isInteger(n) && n >= 0 && n < 9;
+    const ready = count === 200 && valid;
+    latestSignal = null;
+    document.getElementById('window-count').textContent = count + ' / 200 · Tick ' + totalTicks;
+    document.getElementById('window-progress').value = count;
+    const summary = document.getElementById('signal-summary');
+    const confidence = document.getElementById('confidence');
+    confidence.value = '—';
+    if (ready) {
+        const overCount = ticks.filter(d => d > n).length;
+        const theoreticalOver = (9-n)/10;
+        const type = overCount/count > theoreticalOver ? 'over' : 'under';
+        const hits = type === 'over' ? overCount : count-overCount;
+        const observed = hits/count;
+        const baseline = getWinProbability(type,n);
+        const [low, high] = wilsonInterval(hits,count);
+        // Compare a single user-selected threshold with its own theoretical baseline.
+        // A high raw percentage alone does not qualify as a signal.
+        const qualified = low > baseline;
+        latestSignal = {type,n,observed,baseline,low,high,qualified};
+        confidence.value = (observed*100).toFixed(1) + '%';
+        summary.textContent = qualified ? (type === 'over' ? '↑ OVER > ' : '↓ UNDER ≤ ') + n + ' · Sesgo observado' : 'Sin señal clara para el umbral ' + n;
+        document.getElementById('signal-explanation').textContent = type.toUpperCase() + ' ' + n + ': ' + hits + '/200 · Frecuencia ' + (observed*100).toFixed(1) + '% · Base teórica ' + (baseline*100).toFixed(0) + '% · Intervalo Wilson 95%: ' + (low*100).toFixed(1) + '–' + (high*100).toFixed(1) + '%. No es una probabilidad predictiva ni una garantía de ganancia.';
+    } else {
+        summary.textContent = !valid ? 'Selecciona un umbral de 0 a 8 para analizar ambas direcciones.' : 'Recopilando datos: faltan ' + (200-count) + ' ticks.';
+        document.getElementById('signal-explanation').textContent = 'A partir de 200 ticks, cada tick nuevo sustituye al más antiguo. Confidence muestra la frecuencia de la dirección analizada; no predice el siguiente tick.';
+    }
+    document.getElementById('signal-digits').innerHTML = digitCounts.map((frequency,digit) => {
+        const active = latestSignal?.qualified && digit === n;
+        const arrow = active ? (latestSignal.type === 'over' ? '↑' : '↓') : '·';
+        return '<div class="signal-digit' + (active ? ' suggested' : '') + '"><span class="signal-arrow" aria-label="' + (active ? latestSignal.type.toUpperCase() + ' umbral ' + digit : 'Sin señal') + '">' + arrow + '</span><strong>' + digit + '</strong><small>' + (count ? frequency/count*100 : 0).toFixed(1) + '%</small></div>';
+    }).join('');
+}
+
+const helpContent = {
+    symbol: ['Activo', 'Selecciona el mercado que suministra los ticks. Cambiar de activo reinicia la ventana; una operación pendiente se anula y su apuesta se devuelve.', 'Ejemplo: Volatility 10.'],
+    'real-price': ['Precio actual', 'Última cotización recibida de Deriv. Es de solo lectura. El último dígito se obtiene respetando la precisión indicada por el proveedor.', 'Ejemplo: 123.40 produce el dígito 0, no el 4.'],
+    'trade-type': ['Predicción', 'OVER gana si el último dígito es mayor que el umbral. UNDER gana si es menor o igual. Esta es la regla del simulador y no un contrato real de Deriv.', 'Ejemplo: OVER 5 gana con 6, 7, 8 o 9; UNDER 5 con 0 a 5. La resolución ocurre en el tercer tick posterior a la entrada.'],
+    'trade-thold': ['Umbral', 'Número con el que se compara el dígito al liquidar la operación. El análisis compara la frecuencia observada con la base teórica de ese mismo umbral.', 'Ejemplo: OVER 0 tiene una base de 90%; un 60% observado no sería una señal favorable. El umbral 9 no permite una operación útil.'],
+    'trade-stake': ['Apuesta', 'Importe simulado reservado al abrir. El saldo disponible baja inmediatamente. Al ganar se devuelve la apuesta más el beneficio; al perder no se descuenta otra vez.', 'Ejemplo: saldo $100, apuesta $10 → disponible $90. OVER 4 ganado devuelve $20 → saldo $110.'],
+    'trade-tp': ['Take profit', 'Detiene la sesión y el bot cuando el beneficio neto acumulado alcanza este importe. Se conserva al reconectar. Cero desactiva el objetivo.', 'Ejemplo: 20 detiene la sesión al alcanzar al menos $20 de PnL.'],
+    confidence: ['Confidence · frecuencia observada', 'Campo automático y de solo lectura. Muestra cuántos de los últimos 200 dígitos cumplen la dirección analizada. La flecha aparece cuando el límite inferior del intervalo Wilson de 95% supera la probabilidad teórica del umbral elegido. No significa 95% de probabilidad de ganar. Las ventanas se solapan y observar muchas ventanas puede producir señales por azar.', 'Ejemplo: OVER 5 cumple en 110 de 200 ticks: frecuencia 55%, base 40%, intervalo aproximado 48.1–61.7%. Es una desviación histórica, no una predicción validada.'],
+    'theme-select': ['Tema', 'Cambia los colores de la interfaz. Los estados de las operaciones mantienen siempre azul, verde y rojo.', 'Ejemplo: White usa superficies claras; Ocean, tonos azules.'],
+    'btn-martingala': ['Martingala', 'Duplica la siguiente apuesta tras perder y vuelve a la apuesta base al ganar. No aumenta la probabilidad de acierto. Se rechazan importes superiores al saldo disponible.', 'Ejemplo: base $2 → pérdida → siguiente apuesta $4.'],
+    'btn-autobot': ['Bot automático', 'Solo abre operaciones simuladas al completar 200 ticks y existir una señal del umbral configurado. Usa la misma señal visible y nunca abre dos operaciones a la vez.', 'Ejemplo: flecha ↑ sobre 5 → operación OVER 5. Una señal histórica no garantiza rentabilidad.'],
+    'acc-balance': ['Saldo disponible', 'Saldo simulado libre después de reservar la operación abierta. PnL contiene solo resultados liquidados. Detener o perder la conexión anula la operación pendiente y devuelve su apuesta. El historial y la cuenta viven en esta pestaña; solo el orden y el tema se guardan.', 'Ejemplo: $100 disponibles, apuesta $10, pérdida → $90. Editar el saldo es un ajuste manual y no modifica el PnL.'],
+    'acc-pnl': ['PnL', 'Suma de ganancias y pérdidas liquidadas. No incluye apuestas abiertas ni ajustes manuales de saldo. Los pagos son teóricos del simulador, sin comisiones, y no cotizaciones reales de Deriv.', 'Ejemplo: +$10 y −$4 → PnL +$6.'],
+    'acc-won': ['Ganadas', 'Número de operaciones liquidadas con resultado ganador. No cuenta operaciones abiertas ni anuladas.', 'Ejemplo: dos cierres ganadores → 2.'],
+    'acc-lost': ['Perdidas', 'Número de operaciones liquidadas con resultado perdedor. Una cancelación no cuenta como pérdida.', 'Ejemplo: una pérdida y una anulación → 1.']
+};
+
+const iconPaths = {
+    info:'M12 11v6 M12 7h.01',
+    up:'M12 19V5 M5 12l7-7 7 7',
+    down:'M12 5v14 M5 12l7 7 7-7',
+    grip:'M9 5h.01 M15 5h.01 M9 12h.01 M15 12h.01 M9 19h.01 M15 19h.01'
+};
+function uiIcon(name) {
+    return '<svg class="ui-icon" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2" stroke-linecap="round" stroke-linejoin="round" aria-hidden="true">' + (name === 'info' ? '<circle cx="12" cy="12" r="9"/>' : '') + '<path d="' + iconPaths[name] + '"/></svg>';
+}
+
+const helpDialog = document.createElement('dialog');
+helpDialog.className = 'help-dialog';
+helpDialog.setAttribute('aria-labelledby','help-title');
+helpDialog.innerHTML = '<form method="dialog"><button class="help-close" aria-label="Cerrar ayuda">✕</button></form><h2 id="help-title"></h2><p id="help-body"></p><p id="help-example"></p>';
+document.body.append(helpDialog);
+helpDialog.addEventListener('click', event => { if(event.target === helpDialog) { const r=helpDialog.getBoundingClientRect(); if(event.clientX<r.left||event.clientX>r.right||event.clientY<r.top||event.clientY>r.bottom)helpDialog.close(); } });
+function showFieldHelp(id) {
+    const [title,body,example] = helpContent[id];
+    document.getElementById('help-title').textContent=title;
+    document.getElementById('help-body').textContent=body;
+    document.getElementById('help-example').textContent=example;
+    helpDialog.showModal();
+}
+Object.keys(helpContent).forEach(id => {
+    const control = document.getElementById(id);
+    const label = document.querySelector('label[for="'+id+'"]') || control?.previousElementSibling;
+    if (!label) return;
+    const button=document.createElement('button');
+    button.type='button'; button.className='info-button'; button.innerHTML=uiIcon('info');
+    button.setAttribute('aria-label','Información: '+helpContent[id][0]);
+    button.addEventListener('click',()=>showFieldHelp(id));
+    // Keep information buttons outside labels so they don't activate the input.
+    const wrapper=document.createElement('span'); wrapper.className='field-label';
+    label.replaceWith(wrapper); wrapper.append(label,button);
+});
+
+// All main sections share a container, allowing every section to change position.
+const workspace = document.querySelector('.main');
+const side = document.querySelector('.right-panel');
+workspace.append(...side.children); side.remove();
+const signals=document.querySelector('.signal-panel');
+workspace.insertBefore(signals, workspace.children[1]);
+const sectionDefinitions = [
+    ['digits','.digits-panel','Gráficos y estadísticas'],
+    ['signals','.signal-panel','Señales'],
+    ['history','.trade-history-panel','Historial'],
+    ['account','.account-summary','Cuenta'],
+    ['terminal','.terminal-panel','Terminal']
+];
+let draggedSection=null;
+function saveSectionOrder() {
+    try { localStorage.setItem('moyaSectionOrder', JSON.stringify([...workspace.children].map(el=>el.dataset.section))); }
+    catch (_) { showToast('No se pudo guardar el orden en este navegador.', 'error'); }
+    syncMoveButtons();
+}
+function syncMoveButtons() {
+    [...workspace.children].forEach((el,index)=>{
+        el.querySelector('[data-move="-1"]').disabled=index===0;
+        el.querySelector('[data-move="1"]').disabled=index===workspace.children.length-1;
+    });
+}
+sectionDefinitions.forEach(([id,selector,name])=>{
+    const section=document.querySelector(selector); section.dataset.section=id;
+    const bar=document.createElement('div'); bar.className='section-tools';
+    bar.innerHTML='<span>'+name+'</span><div><button type="button" class="drag-handle" draggable="true" aria-label="Arrastrar '+name+'" title="Arrastra para mover">⠿</button><button type="button" data-move="-1" aria-label="Mover '+name+' antes">↑</button><button type="button" data-move="1" aria-label="Mover '+name+' después">↓</button></div>';
+    section.prepend(bar);
+    bar.querySelector('.drag-handle').innerHTML=uiIcon('grip');
+    bar.querySelector('[data-move="-1"]').innerHTML=uiIcon('up');
+    bar.querySelector('[data-move="1"]').innerHTML=uiIcon('down');
+    bar.querySelectorAll('[data-move]').forEach(button=>button.addEventListener('click',()=>{
+        const next=button.dataset.move==='1';
+        const sibling=next ? section.nextElementSibling : section.previousElementSibling;
+        if(!sibling)return;
+        if(next) workspace.insertBefore(sibling,section); else workspace.insertBefore(section,sibling);
+        saveSectionOrder(); section.scrollIntoView({block:'nearest'});
+        showToast(name+' movido. Orden guardado.');
+    }));
+    const handle=bar.querySelector('.drag-handle');
+    handle.addEventListener('dragstart',event=>{draggedSection=section;event.dataTransfer.setData('text/plain',id);event.dataTransfer.effectAllowed='move';});
+    handle.addEventListener('dragend',()=>{draggedSection=null;workspace.querySelectorAll('.drop-target').forEach(e=>e.classList.remove('drop-target'));});
+    section.addEventListener('dragover',event=>{if(draggedSection&&draggedSection!==section){event.preventDefault();section.classList.add('drop-target');}});
+    section.addEventListener('dragleave',()=>section.classList.remove('drop-target'));
+    section.addEventListener('drop',event=>{
+        event.preventDefault();section.classList.remove('drop-target');
+        if(!draggedSection||draggedSection===section)return;
+        const children=[...workspace.children];
+        workspace.insertBefore(draggedSection,children.indexOf(draggedSection)<children.indexOf(section)?section.nextSibling:section);
+        saveSectionOrder();draggedSection=null;
+    });
+});
+try {
+    const saved=JSON.parse(localStorage.getItem('moyaSectionOrder') || 'null');
+    if(Array.isArray(saved)) [...new Set(saved)].forEach(id=>{
+        const section=[...workspace.children].find(el=>el.dataset.section===id);
+        if(section)workspace.append(section);
+    });
+} catch (_) { /* Ignore unavailable storage and malformed saved layouts. */ }
+syncMoveButtons();
+['trade-thold','trade-type'].forEach(id=>document.getElementById(id).addEventListener('input',updateSignal));
+updateSignal();
+
+</script>
+<!-- embedded:workspace.js:end -->
 </body>
 </html>

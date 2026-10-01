@@ -17,11 +17,15 @@ const server=http.createServer((req,res)=>{
  const send=(method,params={})=>new Promise((resolve,reject)=>{const key=++id;pending.set(key,m=>m.error?reject(m.error):resolve(m.result));ws.send(JSON.stringify({id:key,method,params}));});
  const evaluate=async expression=>{const response=await send('Runtime.evaluate',{expression,returnByValue:true,awaitPromise:true});if(response.exceptionDetails)throw Error(response.exceptionDetails.exception?.description||JSON.stringify(response.exceptionDetails));return response.result.value;};
  await send('Runtime.enable');await send('Page.enable');
+ await send('Network.enable');
+ await send('Network.setBlockedURLs',{urls:['*glass.css*','*workspace.js*']});
  const injection=await send('Page.addScriptToEvaluateOnNewDocument',{source:`window.WebSocket=class {static OPEN=1;constructor(url){this.url=url;this.readyState=1;setTimeout(()=>this.onopen?.(),0);}send(){}close(){this.readyState=3;this.onclose?.({code:1000});}};`});
  await send('Page.navigate',{url:'http://127.0.0.1:8765'});await new Promise(r=>setTimeout(r,500));
  const results=await evaluate(`(()=>{
  const checks=[];const check=(name,condition)=>{if(!condition)throw Error(name);checks.push(name);};
  const field=(id,value)=>document.getElementById(id).value=value;
+ check('standalone HTML has no companion requests',!document.querySelector('link[href="glass.css"],script[src="workspace.js"]'));
+ check('embedded styles and icons load with companion files blocked',document.querySelectorAll('.ui-icon').length===29&&getComputedStyle(document.querySelector('.top-bar')).display==='grid');
  start(); const feed=d=>processTick(d,100+d/100);
  for(let i=0;i<200;i++)feed(i%10);
  check('200 ticks and neutral window',totalTicks===200&&ticks.length===200&&!latestSignal.qualified);
