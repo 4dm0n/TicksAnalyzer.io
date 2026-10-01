@@ -25,7 +25,7 @@ const server=http.createServer((req,res)=>{
  const checks=[];const check=(name,condition)=>{if(!condition)throw Error(name);checks.push(name);};
  const field=(id,value)=>document.getElementById(id).value=value;
  check('standalone HTML has no companion requests',!document.querySelector('link[href="glass.css"],script[src="workspace.js"]'));
- check('embedded styles and icons load with companion files blocked',document.querySelectorAll('.ui-icon').length===29&&getComputedStyle(document.querySelector('.top-bar')).display==='grid');
+ check('embedded styles and icons load with companion files blocked',document.querySelectorAll('.ui-icon').length===19&&getComputedStyle(document.querySelector('.top-bar')).display==='grid');
  start(); const feed=d=>processTick(d,100+d/100);
  for(let i=0;i<200;i++)feed(i%10);
  check('200 ticks and neutral window',totalTicks===200&&ticks.length===200&&!latestSignal.qualified);
@@ -62,7 +62,7 @@ const server=http.createServer((req,res)=>{
  stop();toggleAutoBot();
  check('donut segments have visible geometry',[...document.querySelectorAll('.donut-svg path')].every(p=>p.getAttribute('d')?.includes('A'))&&document.querySelectorAll('.donut-svg path').length>0);
  showFieldHelp('confidence');check('help modal opens',document.querySelector('dialog').open);document.querySelector('dialog').close();
- document.querySelector('[data-section="digits"] [data-move="1"]').click();check('section position stored',JSON.parse(localStorage.getItem('moyaSectionOrder'))[0]==='signals');
+ document.querySelector('[data-section="digits"] .drag-handle').dispatchEvent(new KeyboardEvent('keydown',{key:'ArrowDown',bubbles:true}));check('section position stored',JSON.parse(localStorage.getItem('moyaSectionOrder'))[0]==='signals');
  return checks;
 })()`);
  await send('Page.reload');await new Promise(r=>setTimeout(r,400));

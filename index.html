@@ -1213,8 +1213,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-v
 #help-example { color:var(--text-muted); background:var(--surface-inner); padding:14px; border-radius:14px; }
 .help-close { position:absolute; right:12px; top:12px; width:44px; height:44px; border:none; background:transparent; color:var(--text); font-size:18px; }
 .section-tools { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; color:var(--text-muted); font-size:11px; }
-.section-tools > div { display:flex; gap:4px; }.section-tools button { width:36px; min-height:36px; border:1px solid var(--edge); border-radius:10px; background:var(--surface-inner); color:var(--text); font-size:17px; }
-.drag-handle { cursor:grab; }.drop-target { outline:2px dashed var(--accent-cyan); outline-offset:3px; }
+.section-tools button { width:44px; min-height:44px; border:1px solid transparent; border-radius:10px; background:transparent; box-shadow:none; color:var(--text-muted); font-size:17px; }
+.drag-handle { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+.drag-handle:hover { color:var(--text); }
+.section-dragging .drag-handle { cursor:grabbing; color:var(--accent-cyan); }
+.section-dragging { opacity:.65; }
+.drop-target { outline:2px dashed var(--accent-cyan); outline-offset:3px; }
 .ui-icon { width:18px; height:18px; vertical-align:middle; pointer-events:none; }
 .section-tools button { display:inline-grid; place-items:center; }
 .trade-history-table { min-width:760px; }
@@ -2527,46 +2531,70 @@ const sectionDefinitions = [
     ['account','.account-summary','Cuenta'],
     ['terminal','.terminal-panel','Terminal']
 ];
-let draggedSection=null;
 function saveSectionOrder() {
     try { localStorage.setItem('moyaSectionOrder', JSON.stringify([...workspace.children].map(el=>el.dataset.section))); }
     catch (_) { showToast('No se pudo guardar el orden en este navegador.', 'error'); }
-    syncMoveButtons();
-}
-function syncMoveButtons() {
-    [...workspace.children].forEach((el,index)=>{
-        el.querySelector('[data-move="-1"]').disabled=index===0;
-        el.querySelector('[data-move="1"]').disabled=index===workspace.children.length-1;
-    });
 }
 sectionDefinitions.forEach(([id,selector,name])=>{
     const section=document.querySelector(selector); section.dataset.section=id;
     const bar=document.createElement('div'); bar.className='section-tools';
-    bar.innerHTML='<span>'+name+'</span><div><button type="button" class="drag-handle" draggable="true" aria-label="Arrastrar '+name+'" title="Arrastra para mover">⠿</button><button type="button" data-move="-1" aria-label="Mover '+name+' antes">↑</button><button type="button" data-move="1" aria-label="Mover '+name+' después">↓</button></div>';
+    bar.innerHTML='<span>'+name+'</span><button type="button" class="drag-handle" aria-label="Mover '+name+'" title="Arrastra para mover. Con teclado, usa las flechas arriba y abajo.">⠿</button>';
     section.prepend(bar);
     bar.querySelector('.drag-handle').innerHTML=uiIcon('grip');
-    bar.querySelector('[data-move="-1"]').innerHTML=uiIcon('up');
-    bar.querySelector('[data-move="1"]').innerHTML=uiIcon('down');
-    bar.querySelectorAll('[data-move]').forEach(button=>button.addEventListener('click',()=>{
-        const next=button.dataset.move==='1';
-        const sibling=next ? section.nextElementSibling : section.previousElementSibling;
-        if(!sibling)return;
-        if(next) workspace.insertBefore(sibling,section); else workspace.insertBefore(section,sibling);
-        saveSectionOrder(); section.scrollIntoView({block:'nearest'});
-        showToast(name+' movido. Orden guardado.');
-    }));
     const handle=bar.querySelector('.drag-handle');
-    handle.addEventListener('dragstart',event=>{draggedSection=section;event.dataTransfer.setData('text/plain',id);event.dataTransfer.effectAllowed='move';});
-    handle.addEventListener('dragend',()=>{draggedSection=null;workspace.querySelectorAll('.drop-target').forEach(e=>e.classList.remove('drop-target'));});
-    section.addEventListener('dragover',event=>{if(draggedSection&&draggedSection!==section){event.preventDefault();section.classList.add('drop-target');}});
-    section.addEventListener('dragleave',()=>section.classList.remove('drop-target'));
-    section.addEventListener('drop',event=>{
-        event.preventDefault();section.classList.remove('drop-target');
-        if(!draggedSection||draggedSection===section)return;
-        const children=[...workspace.children];
-        workspace.insertBefore(draggedSection,children.indexOf(draggedSection)<children.indexOf(section)?section.nextSibling:section);
-        saveSectionOrder();draggedSection=null;
+    handle.addEventListener('keydown',event=>{
+        if(!['ArrowUp','ArrowDown'].includes(event.key))return;
+        event.preventDefault();
+        const next=event.key==='ArrowDown';
+        const sibling=next?section.nextElementSibling:section.previousElementSibling;
+        if(!sibling)return;
+        if(next)workspace.insertBefore(sibling,section);else workspace.insertBefore(section,sibling);
+        saveSectionOrder();handle.focus();handle.scrollIntoView({block:'nearest'});
+        showToast(name+' movido. Orden guardado.');
     });
+    let pointer=null, target=null, frame=null;
+    function trackTarget() {
+        target?.classList.remove('drop-target');
+        const hit=document.elementFromPoint(pointer.x,pointer.y)?.closest('[data-section]');
+        target=hit?.parentElement===workspace&&hit!==section?hit:null;
+        target?.classList.add('drop-target');
+    }
+    function autoScroll() {
+        if(!pointer?.moving)return;
+        const speed=pointer.y<70?-12:pointer.y>window.innerHeight-70?12:0;
+        if(speed){window.scrollBy(0,speed);trackTarget();}
+        frame=requestAnimationFrame(autoScroll);
+    }
+    function finish(cancelled=false) {
+        if(!pointer)return;
+        const destination=pointer.moving&&!cancelled?target:null;
+        const pointerId=pointer.id;
+        pointer=null;cancelAnimationFrame(frame);
+        target?.classList.remove('drop-target');target=null;
+        section.classList.remove('section-dragging');
+        if(handle.hasPointerCapture(pointerId))handle.releasePointerCapture(pointerId);
+        if(!destination)return;
+        const children=[...workspace.children];
+        workspace.insertBefore(section,children.indexOf(section)<children.indexOf(destination)?destination.nextSibling:destination);
+        saveSectionOrder();handle.focus({preventScroll:true});
+        showToast(name+' movido. Orden guardado.');
+    }
+    handle.addEventListener('pointerdown',event=>{
+        if(event.button!==0||!event.isPrimary)return;
+        pointer={id:event.pointerId,x:event.clientX,y:event.clientY,startX:event.clientX,startY:event.clientY,moving:false};
+        handle.setPointerCapture(event.pointerId);
+    });
+    handle.addEventListener('pointermove',event=>{
+        if(!pointer||event.pointerId!==pointer.id)return;
+        pointer.x=event.clientX;pointer.y=event.clientY;
+        if(!pointer.moving&&Math.hypot(pointer.x-pointer.startX,pointer.y-pointer.startY)>6){
+            pointer.moving=true;section.classList.add('section-dragging');autoScroll();
+        }
+        if(pointer.moving)trackTarget();
+    });
+    handle.addEventListener('pointerup',()=>finish());
+    handle.addEventListener('pointercancel',()=>finish(true));
+    handle.addEventListener('lostpointercapture',()=>finish(true));
 });
 try {
     const saved=JSON.parse(localStorage.getItem('moyaSectionOrder') || 'null');
@@ -2575,7 +2603,6 @@ try {
         if(section)workspace.append(section);
     });
 } catch (_) { /* Ignore unavailable storage and malformed saved layouts. */ }
-syncMoveButtons();
 ['trade-thold','trade-type'].forEach(id=>document.getElementById(id).addEventListener('input',updateSignal));
 updateSignal();
 

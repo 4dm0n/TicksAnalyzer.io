@@ -31,7 +31,7 @@ A real-time tick analysis dashboard for Deriv synthetic indices and forex pairs.
 - An ↑ OVER / ↓ UNDER arrow appears when the lower 95% Wilson bound exceeds that direction's theoretical baseline. Otherwise the UI reports no clear signal. Repeated overlapping windows may produce chance signals.
 - The bot waits for 200 ticks and follows the displayed signal.
 - Immediate history: open blue, won green, lost red, cancelled grey in every theme.
-- Reorder sections with drag handles or ↑/↓ buttons; localStorage saves their order. Fields include modal help and local SVG icons.
+- Reorder sections with transparent dot handles (mouse or touch; keyboard arrows when focused); localStorage saves their order. Fields include modal help and local SVG icons.
 - Account and history are in-memory; only theme and section order persist across reloads.
 
 ## Quick Start

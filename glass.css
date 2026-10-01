@@ -165,8 +165,12 @@ button:focus-visible,select:focus-visible,input:focus-visible,[tabindex]:focus-v
 #help-example { color:var(--text-muted); background:var(--surface-inner); padding:14px; border-radius:14px; }
 .help-close { position:absolute; right:12px; top:12px; width:44px; height:44px; border:none; background:transparent; color:var(--text); font-size:18px; }
 .section-tools { display:flex; justify-content:space-between; align-items:center; gap:8px; margin-bottom:12px; color:var(--text-muted); font-size:11px; }
-.section-tools > div { display:flex; gap:4px; }.section-tools button { width:36px; min-height:36px; border:1px solid var(--edge); border-radius:10px; background:var(--surface-inner); color:var(--text); font-size:17px; }
-.drag-handle { cursor:grab; }.drop-target { outline:2px dashed var(--accent-cyan); outline-offset:3px; }
+.section-tools button { width:44px; min-height:44px; border:1px solid transparent; border-radius:10px; background:transparent; box-shadow:none; color:var(--text-muted); font-size:17px; }
+.drag-handle { cursor:grab; touch-action:none; user-select:none; -webkit-user-select:none; }
+.drag-handle:hover { color:var(--text); }
+.section-dragging .drag-handle { cursor:grabbing; color:var(--accent-cyan); }
+.section-dragging { opacity:.65; }
+.drop-target { outline:2px dashed var(--accent-cyan); outline-offset:3px; }
 .ui-icon { width:18px; height:18px; vertical-align:middle; pointer-events:none; }
 .section-tools button { display:inline-grid; place-items:center; }
 .trade-history-table { min-width:760px; }

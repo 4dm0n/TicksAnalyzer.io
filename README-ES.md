@@ -29,7 +29,7 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 - Las flechas ↑ OVER / ↓ UNDER aparecen sobre el umbral cuando el límite inferior del intervalo Wilson del 95% supera la base teórica de esa dirección. Sin esa evidencia se muestra “Sin señal clara”. Las ventanas solapadas pueden generar señales por azar.
 - El bot espera 200 ticks y usa la misma señal visible.
 - Historial inmediato: abierta azul, ganada verde, perdida roja; anulada gris. Los colores semánticos se conservan en todos los temas.
-- Secciones reordenables por arrastre o botones ↑/↓, con orden guardado en localStorage. Cada campo dispone de ayuda modal con ejemplos e iconos SVG locales.
+- Secciones reordenables con el control de puntitos (ratón o toque; flechas del teclado al enfocarlo), con orden guardado en localStorage. Cada campo dispone de ayuda modal con ejemplos e iconos SVG locales.
 - Historial y balance duran durante la pestaña; no se guardan al recargar. Tema y orden sí persisten cuando el navegador permite almacenamiento.
 
 ## Inicio Rápido
