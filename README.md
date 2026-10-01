@@ -1,4 +1,6 @@
-# Deriv Live Analyzer
+# Moya Analyzer
+
+The glassmorphic interface uses `glass.css` alongside `index.html`. Keep both files in the same folder; no build step or framework is required. The existing Matrix, Dark, Purple, Ocean and White themes support phone, tablet and desktop layouts.
 
 A real-time tick analysis dashboard for Deriv synthetic indices and forex pairs. Built as a single HTML file with vanilla JavaScript, featuring WebSocket connectivity to Deriv's public API, interactive charts, and simulated trading capabilities.
 

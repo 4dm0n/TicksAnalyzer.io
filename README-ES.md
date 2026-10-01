@@ -1,4 +1,4 @@
-# Deriv Live Analyzer
+# Moya Analyzer
 
 Un panel de análisis de ticks en tiempo real para índices sintéticos y pares de divisas de Deriv. Construido como un único archivo HTML con JavaScript vanilla, con conectividad WebSocket a la API pública de Deriv, gráficos interactivos y capacidades de trading simulado.
 
@@ -33,7 +33,7 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 ## Inicio Rápido
 
 1. Clona o descarga el repositorio
-2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari)
+2. Abre `index.html` en un navegador moderno (Chrome, Firefox, Edge, Safari). Mantén `glass.css` en la misma carpeta.
 3. Selecciona un activo del desplegable
 4. Haz clic en **Iniciar** para comenzar el análisis en vivo
 5. Configura parámetros de trade y haz clic en **ENTRAR** para operaciones simuladas
@@ -60,11 +60,19 @@ Un panel de análisis de ticks en tiempo real para índices sintéticos y pares 
 ## Detalles Técnicos
 
 ### Arquitectura
-- Aplicación de archivo único (`index.html`)
+- Aplicación HTML con JavaScript integrado (`index.html`) y capa visual en `glass.css`, sin compilación.
 - JavaScript ES6 vanilla (sin paso de build requerido)
 - CSS Grid/Flexbox para layout responsivo
 - Gráficos basados en SVG (sin librerías externas)
 - API WebSocket para datos en tiempo real
+
+### Interfaz glassmorphic
+- Cinco temas: Matrix, Dark, Purple, Ocean y White, con preferencia guardada localmente.
+- Paneles translúcidos, tipografía del sistema, controles táctiles y áreas seguras para pantallas con notch.
+- Distribución adaptable a móviles, tablets y escritorio; el historial conserva desplazamiento horizontal independiente.
+- Respeta movimiento reducido y usa fondos sólidos si el navegador no admite desenfoque.
+- Verificación en Chrome headless: 30 combinaciones de temas y anchos (320, 390, 768, 1024, 1440 y 1920 px), sin desbordamiento de página ni excepciones de JavaScript. Gráficos comprobados con datos sintéticos. Resultados en `ui-checks.json`.
+- Pendiente la validación física en Safari/iOS y Android; las pruebas no verifican la conexión externa de Deriv.
 
 ### Flujo de Datos
 ```

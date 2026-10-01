@@ -2,13 +2,12 @@
 <html lang="es">
 <head>
 <meta charset="UTF-8">
-<meta charset="UTF-8">
     <meta name="viewport" content="width=device-width, initial-scale=1.0, viewport-fit=coverage">
     <meta name="apple-mobile-web-app-capable" content="yes">
     <meta name="apple-mobile-web-app-status-bar-style" content="black-translucent">
     <meta name="format-detection" content="telephone=no">
     <meta name="mobile-web-app-capable" content="yes">
-    <title>Deriv Live Analyzer - Offline</title>
+    <title>Moya Analyzer</title>
 <style>
     *{margin:0;padding:0;box-sizing:border-box}
 
@@ -1045,72 +1044,60 @@
         .stats-grid{ font-size:11px; }
     }
 </style>
+<link rel="stylesheet" href="glass.css">
 </head>
 <body>
 
 <div class="container">
+    <header class="app-header">
+        <div class="brand"><span class="brand-icon" aria-hidden="true">↗</span><div><p class="eyebrow">MOYA / WORKSPACE</p><h1>Moya Analyzer<span class="brand-dot">.</span></h1></div></div>
+        <div class="workspace-badge"><span aria-hidden="true"></span>Cuenta simulada</div>
+    </header>
+    <div class="section-intro"><div><h2>Tu mercado, en perspectiva.</h2><p>Explora los dígitos. Sigue la secuencia. Analiza cada movimiento.</p></div><span class="intro-caption">ANÁLISIS EN TIEMPO REAL</span></div>
 
-    <div class="top-bar">
-        <label>Activo:</label>
-        <select id="symbol" title="Seleccionar activo financiero">
+    <div class="top-bar"><div class="field field-symbol"><label for="symbol">Activo</label><select id="symbol" title="Seleccionar activo financiero">
             <option value="R_10">Volatility 10</option>
             <option value="R_25">Volatility 25</option>
             <option value="R_50">Volatility 50</option>
             <option value="R_75">Volatility 75</option>
             <option value="R_100">Volatility 100</option>
             <option value="BTCUSD">BTC/USD</option>
-        </select>
-
-        <label>Precio Real:</label>
-        <input type="number" id="real-price" step="0.00001" readonly title="Precio del tick en tiempo real">
-
-        <label>Predicción:</label>
-        <select id="trade-type" title="Dirección de la apuesta: Over (dígito > N) o Under (dígito ≤ N)">
+        </select></div>
+<div class="field field-real-price"><label for="real-price">Precio actual</label><input type="number" id="real-price" step="0.00001" readonly title="Precio del tick en tiempo real"></div>
+<div class="field field-trade-type"><label for="trade-type">Predicción</label><select id="trade-type" title="Dirección de la apuesta: Over (dígito > N) o Under (dígito ≤ N)">
             <option value="over">Over</option>
             <option value="under">Under</option>
-        </select>
-
-        <label>N:</label>
-        <input type="number" id="trade-thold" min="0" max="9" value="5" style="width:60px" title="Umbral N: dígito sobre el que apostar">
-
-        <label>Stake:</label>
-        <input type="number" id="trade-stake" min="0.01" step="0.01" value="1.00" style="width:70px" title="Monto de la apuesta">
-
-        <label>TP:</label>
-        <input type="number" id="trade-tp" min="0" step="0.01" value="0" style="width:70px" title="Take Profit: objetivo de beneficio acumulado (0 = sin límite)">
-
-        <button id="btn-start" onclick="start()" title="Iniciar conexión WebSocket y análisis">Iniciar</button>
-        <button id="btn-stop" onclick="stop()" disabled title="Detener sesión y análisis">Parar</button>
-
-        <label>Tema:</label>
-        <select id="theme-select" title="Cambiar tema visual">
+        </select></div>
+<div class="field field-trade-thold"><label for="trade-thold">Umbral</label><input type="number" id="trade-thold" min="0" max="9" value="5" title="Umbral N: dígito sobre el que apostar"></div>
+<div class="field field-trade-stake"><label for="trade-stake">Apuesta</label><input type="number" id="trade-stake" min="0.01" step="0.01" value="1.00" title="Monto de la apuesta"></div>
+<div class="field field-trade-tp"><label for="trade-tp">Take profit</label><input type="number" id="trade-tp" min="0" step="0.01" value="0" title="Take Profit: objetivo de beneficio acumulado (0 = sin límite)"></div>
+<div class="session-actions"><button id="btn-start" onclick="start()" title="Iniciar conexión WebSocket y análisis">Iniciar</button><button id="btn-stop" onclick="stop()" disabled title="Detener sesión y análisis">Detener</button></div>
+<div class="field field-theme-select"><label for="theme-select">Tema</label><select id="theme-select" title="Cambiar tema visual">
             <option value="matrix">Matrix</option>
             <option value="dark">Dark</option>
             <option value="purple">Purple</option>
             <option value="ocean">Ocean</option>
             <option value="white">White</option>
-        </select>
-        <div class="trade-direction-info" id="trade-direction-info" title="Información de dirección de trade">Predicción: Over / Under según selector</div>
-        <div id="trade-status" title="Estado de la operación actual"><span class="cyan">Listo para operar</span></div>
-    </div>
+        </select></div>
+<div class="trade-direction-info" id="trade-direction-info">Predicción: Over / Under según selector</div><div id="trade-status"><span class="cyan">Listo para operar</span></div></div>
 
     <div class="main">
 
         <div class="digits-panel">
-            <div class="chart-title-bar">ANÁLISIS DE DÍGITOS (últimos 200 ticks)</div>
+            <div class="chart-title-bar">Análisis de dígitos <span class="panel-caption">Últimos 200 ticks</span></div>
             <div class="charts-row">
                 <div class="chart-section">
-                    <div class="chart-subtitle">DISTRIBUCIÓN (Barras)</div>
+                    <div class="chart-subtitle">Frecuencia de dígitos</div>
                     <div class="chart-container bar-chart" id="chart-bar"></div>
                     <div class="chart-legend" id="chart-legend-bar"></div>
                 </div>
                 <div class="chart-section">
-                    <div class="chart-subtitle">DISTRIBUCIÓN (Donut)</div>
+                    <div class="chart-subtitle">Distribución porcentual</div>
                     <div class="chart-container donut-chart" id="chart-donut"></div>
                     <div class="chart-legend" id="chart-legend-donut"></div>
                 </div>
                 <div class="chart-section">
-                    <div class="chart-subtitle">SECUENCIA (Línea)</div>
+                    <div class="chart-subtitle">Secuencia de los últimos 50 ticks</div>
                     <div class="chart-container line-chart" id="chart-line"></div>
                     <div class="chart-legend" id="chart-legend-line"></div>
                 </div>
@@ -1121,10 +1108,10 @@
         <div class="right-panel">
             <div class="trade-history-panel">
                 <div class="trade-history-header">
-                    <h3>HISTORIAL DE OPERACIONES</h3>
+                    <h3>Historial de operaciones</h3>
                     <button id="btn-clear-history" class="clear-btn" onclick="clearTradeHistory()" title="Borrar historial">×</button>
                 </div>
-                <div class="trade-history-table-wrapper">
+                <div class="trade-history-table-wrapper" tabindex="0" role="region" aria-label="Historial de operaciones; desliza para ver todas las columnas">
                     <table class="trade-history-table" id="trade-history-table">
                         <thead>
                             <tr>
@@ -1143,11 +1130,11 @@
                 </div>
             </div>
             <div class="account-summary">
-                <div class="account-title">RESUMEN DE CUENTA</div>
+                <div class="account-title">Resumen de cuenta</div>
                 <div class="account-row">
                     <span class="acc-label">Balance</span>
                     <span class="acc-val" id="acc-balance" title="Doble clic para editar">$1,000.00</span>
-                    <span class="acc-edit-hint">Editar</span>
+                    <button class="acc-edit-hint" type="button" aria-label="Editar balance simulado" onclick="document.getElementById('acc-balance').dispatchEvent(new MouseEvent('dblclick'))">Editar</button>
                 </div>
                 <div class="account-row">
                     <span class="acc-label">PnL</span>
@@ -1163,7 +1150,7 @@
                 </div>
             </div>
             <div class="terminal-panel">
-                <div class="terminal-title">TERMINAL DE ANÁLISIS</div>
+                <div class="terminal-title">Terminal de análisis</div>
                 <div class="terminal-output" id="terminal"></div>
             </div>
         </div>
@@ -1178,14 +1165,14 @@
         <button id="btn-autobot" class="toggle-btn" onclick="toggleAutoBot()" title="Auto-bot: abre operaciones automáticamente siguiendo las señales de análisis">DESACTIVADO</button>
         </div>
         <div class="controls-right">
-        <button id="btn-trade" onclick="openTrade()" disabled title="Abrir operación">ENTRAR</button>
+        <button id="btn-trade" onclick="openTrade()" disabled title="Abrir operación">Abrir operación ↗</button>
         <div class="quick-stats" id="quick-stats"></div>
         </div>
     </div>
 
 </div>
 
-<div class="toast" id="toast"></div>
+<div class="toast" id="toast" role="status" aria-live="polite"></div>
 
 <script>
 function setVh() {
@@ -1377,9 +1364,9 @@ function updateBarLegend() {
     const total = ticks.length || 1;
     const legend = document.getElementById('chart-legend-bar');
     legend.innerHTML = `
-        <span><span class="dot" style="background:#00ff7f"></span> Hot (más frecuente)</span>
-        <span><span class="dot" style="background:#666"></span> Cold (menos frecuente)</span>
-        <span><span class="dot" style="background:rgba(0,255,119,.15)"></span> Total: ${total} ticks</span>
+        <span><span class="dot" style="background:var(--hot)"></span> Hot (más frecuente)</span>
+        <span><span class="dot" style="background:var(--cold)"></span> Cold (menos frecuente)</span>
+        <span><span class="dot" style="background:rgba(0,255,119,.15)"></span> Total: ${ticks.length} ticks</span>
     `;
 }
 
@@ -1446,7 +1433,7 @@ function renderDonutChart(container) {
     label.setAttribute('x', centerX);
     label.setAttribute('y', centerY + 2);
     label.setAttribute('text-anchor', 'middle');
-    label.setAttribute('fill', '#00ff7f');
+    label.setAttribute('fill', 'var(--accent-cyan)');
     label.setAttribute('font-size', '15');
     label.setAttribute('font-weight', 'bold');
     label.textContent = ticks.length + ' ticks';
@@ -1456,9 +1443,9 @@ function renderDonutChart(container) {
     subLabel.setAttribute('x', centerX);
     subLabel.setAttribute('y', centerY + 18);
     subLabel.setAttribute('text-anchor', 'middle');
-    subLabel.setAttribute('fill', '#66cc99');
+    subLabel.setAttribute('fill', 'var(--text-muted)');
     subLabel.setAttribute('font-size', '10');
-    subLabel.textContent = `Total: ${total}`;
+    subLabel.textContent = ticks.length ? "Ventana de 200 ticks" : "Esperando datos";
     svg.appendChild(subLabel);
 
     container.appendChild(svg);
@@ -1494,12 +1481,13 @@ function renderLineChart(container) {
     container.classList.remove('empty-state');
 
     const svg = document.createElementNS(svgNS, 'svg');
-    svg.setAttribute('viewBox', '0 0 940 250');
+    const chartWidth = Math.max(280, container.clientWidth - 16);
+    svg.setAttribute('viewBox', `0 0 ${chartWidth} 250`);
     svg.setAttribute('preserveAspectRatio', 'none');
     svg.setAttribute('class', 'line-svg');
 
     const margin = { top: 20, right: 60, bottom: 35, left: 50 };
-    const w = 940 - margin.left - margin.right;
+    const w = chartWidth - margin.left - margin.right;
     const h = 250 - margin.top - margin.bottom;
 
     const g = document.createElementNS(svgNS, 'g');
@@ -1518,7 +1506,7 @@ function renderLineChart(container) {
         line.setAttribute('y1', y);
         line.setAttribute('x2', w);
         line.setAttribute('y2', y);
-        line.setAttribute('stroke', 'rgba(0,255,119,0.06)');
+        line.setAttribute('stroke', 'var(--chart-grid)');
         line.setAttribute('stroke-width', '1');
         g.appendChild(line);
 
@@ -1526,7 +1514,7 @@ function renderLineChart(container) {
         lbl.setAttribute('x', -8);
         lbl.setAttribute('y', y + 4);
         lbl.setAttribute('text-anchor', 'end');
-        lbl.setAttribute('fill', '#00cc66');
+        lbl.setAttribute('fill', 'var(--text-muted)');
         lbl.setAttribute('font-size', '9');
         lbl.textContent = String(d);
         g.appendChild(lbl);
@@ -1663,10 +1651,10 @@ function updateStats() {
     });
 
     const even = ticks.filter(x => x % 2 === 0).length;
-    const odd = total - even;
+    const odd = ticks.length - even;
     const thold = parseInt(document.getElementById('trade-thold').value) || 5;
     const overThold = ticks.filter(x => x > thold).length;
-    const underThold = total - overThold;
+    const underThold = ticks.length - overThold;
 
     const hotPct = (hotCount / total * 100).toFixed(1);
     const coldPct = (coldCount / total * 100).toFixed(1);
@@ -1782,7 +1770,7 @@ function updateTradeStatus() {
         if (btnTrade) { btnTrade.textContent = 'CERRAR'; }
     } else {
         if (statusEl) statusEl.innerHTML = `<span class="cyan">Listo: ${type.toUpperCase()} $${thold}</span> <span class="gray">| Payout: ${payoutMultiplier.toFixed(2)}x | Prob: ${(winProb*100).toFixed(0)}% | Ganancia: $${expectedProfit.toFixed(2)}</span>`;
-        if (btnTrade) { btnTrade.textContent = 'ENTRAR'; }
+        if (btnTrade) { btnTrade.textContent = 'Abrir operación ↗'; }
     }
 }
 
@@ -1912,7 +1900,7 @@ function resolveTrade(won, digit) {
     addTradeToHistory(trade, won ? 'won' : 'lost', pnl, currentPrice, digit);
 
     trade = null;
-    document.getElementById('btn-trade').textContent = 'ENTRAR';
+    document.getElementById('btn-trade').textContent = 'Abrir operación ↗';
     document.getElementById('btn-trade').onclick = openTrade;
     const statusEl = document.getElementById('trade-status');
     if (statusEl) statusEl.innerHTML = '<span class="cyan">Listo para operar</span>';
@@ -1959,6 +1947,7 @@ function getWinProbability(type, thold) {
         return (thold + 1) / 10;
     }
 }
+function toggleMartingala() {
     martingala = !martingala;
     const btn = document.getElementById('btn-martingala');
     if (martingala) {
@@ -2066,7 +2055,7 @@ function stop() {
     document.getElementById('btn-trade').disabled = true;
     if (trade) {
         trade = null;
-        document.getElementById('btn-trade').textContent = 'ENTRAR';
+        document.getElementById('btn-trade').textContent = 'Abrir operación ↗';
         document.getElementById('btn-trade').onclick = openTrade;
     }
     log('<span class="yellow">Sesión detenida</span>');
@@ -2352,7 +2341,9 @@ function applyTheme(theme) {
     };
     const vars = themes[theme] || themes.matrix;
     Object.keys(vars).forEach(k => root.style.setProperty(k, vars[k]));
-    localStorage.setItem('kiloTheme', theme);
+    root.dataset.theme = themes[theme] ? theme : 'matrix';
+    root.style.colorScheme = theme === 'white' ? 'light' : 'dark';
+    try { localStorage.setItem('kiloTheme', root.dataset.theme); } catch (_) { /* Storage can be unavailable in private browsing. */ }
 }
 
 if (document.getElementById('theme-select')) {
@@ -2381,7 +2372,9 @@ if (document.getElementById('trade-tp')) {
     });
 }
 
-const savedTheme = localStorage.getItem('kiloTheme') || 'matrix';
+let savedTheme = 'matrix';
+try { savedTheme = localStorage.getItem('kiloTheme') || 'matrix'; } catch (_) {}
+if (!['matrix', 'dark', 'purple', 'ocean', 'white'].includes(savedTheme)) savedTheme = 'matrix';
 if (document.getElementById('theme-select')) {
     document.getElementById('theme-select').value = savedTheme;
 }
@@ -2395,6 +2388,15 @@ renderTradeHistory();
 document.getElementById('btn-stop').disabled = true;
 document.getElementById('btn-stop').classList.add('toggle-on');
 document.getElementById('btn-trade').disabled = true;
+
+if ('ResizeObserver' in window) {
+    let chartFrame;
+    const observer = new ResizeObserver(() => {
+        cancelAnimationFrame(chartFrame);
+        chartFrame = requestAnimationFrame(() => renderLineChart(document.getElementById('chart-line')));
+    });
+    observer.observe(document.getElementById('chart-line'));
+}
 </script>
 
 </body>
