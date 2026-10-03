@@ -34,7 +34,16 @@
     "frequent mode shows modest observed deviation",
     "strict mode rejects same modest deviation",
     "all thresholds offers multiple visible candidates",
-    "analysis preferences stored"
+    "analysis preferences stored",
+    "Over selection never becomes Under signal",
+    "selected mode displays only selected threshold",
+    "bot does not invert Over to enter",
+    "Under selected bot entry respects direction and threshold",
+    "Under selection never becomes Over signal",
+    "bot does not invert Under to enter",
+    "all mode bot preserves user selectors",
+    "manual all mode still uses selected threshold",
+    "manual Under uses selected direction"
   ],
   "restoredOrder": true,
   "layout": [
@@ -234,7 +243,7 @@
   "live": {
     "ticks": 1,
     "connected": true,
-    "lastPrice": 4922.52
+    "lastPrice": 4916.358
   },
   "errors": []
 }

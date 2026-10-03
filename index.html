@@ -1981,11 +1981,12 @@ function updateTradeDirectionInfo() {
     }
 }
 
-function openTrade() {
+function openTrade(signal = null) {
     if (!isRunning || trade || balanceEditing) return;
     if (ticks.length < 10 || !ws || ws.readyState !== WebSocket.OPEN) { showToast('Espera a recibir al menos 10 ticks y tener conexión activa.', 'error'); return; }
     const type = document.getElementById('trade-type').value;
-    const n = Number(document.getElementById('trade-thold').value);
+    const n = signal ? signal.n : Number(document.getElementById('trade-thold').value);
+    if (signal && (signal.type !== type || (document.getElementById('signal-scope').value === 'selected' && n !== Number(document.getElementById('trade-thold').value)))) return;
     const enteredStake = Number(document.getElementById('trade-stake').value);
     const tp = Number(document.getElementById('trade-tp').value);
     if (document.getElementById('trade-thold').value === '' || !Number.isInteger(n) || n < 0 || n > 9 || getWinProbability(type,n) <= 0 || getWinProbability(type,n) >= 1) { showToast('Umbral inválido: evita resultados imposibles o seguros.', 'error'); return; }
@@ -2107,10 +2108,10 @@ function toggleAutoBot() {
 }
 
 function evaluateAutoTrade() {
-    if (!autoTrade || !isRunning || trade || !latestSignal?.qualified) return;
-    document.getElementById('trade-type').value = latestSignal.type;
-    document.getElementById('trade-thold').value = latestSignal.n;
-    openTrade();
+    if (!autoTrade || !isRunning || trade) return;
+    updateSignal();
+    if (!latestSignal?.qualified) return;
+    openTrade(latestSignal);
 }
 
 function stop() {
@@ -2455,7 +2456,7 @@ function updateSignal() {
     if (ready) for (let n = 0; n < 9; n++) {
         if (!all && (!valid || n !== selected)) continue;
         const overCount = ticks.filter(d => d > n).length;
-        const type = overCount/count > (9-n)/10 ? 'over' : 'under';
+        const type = document.getElementById('trade-type').value;
         const hits = type === 'over' ? overCount : count-overCount;
         const observed = hits/count;
         const baseline = getWinProbability(type,n);
@@ -2483,10 +2484,12 @@ function updateSignal() {
         explanation.textContent = 'El umbral 9 no permite comparar dos resultados posibles.';
     } else {
         const s=latestSignal;
-        summary.textContent = active.length ? active.length+' señal(es) · '+(s.type==='over'?'↑ OVER > ':'↓ UNDER ≤ ')+s.n+' · '+(mode==='frequent'?'Exploratoria':mode==='balanced'?'Equilibrada':'Estricta') : 'Sin señal con el filtro actual';
+        summary.textContent = active.length ? active.length+' señal(es) · '+(s.type==='over'?'↑ OVER > ':'↓ UNDER ≤ ')+s.n+' · '+(mode==='frequent'?'Exploratoria':mode==='balanced'?'Equilibrada':'Estricta') : 'Sin señal '+s.type.toUpperCase()+' con el filtro actual';
         explanation.textContent = 'Principal: '+s.type.toUpperCase()+' '+s.n+' · '+s.hits+'/'+count+' · Frecuencia '+(s.observed*100).toFixed(1)+'% · Base '+(s.baseline*100).toFixed(0)+'% · Intervalo Wilson 95%: '+(s.low*100).toFixed(1)+'–'+(s.high*100).toFixed(1)+'%. '+(mode==='frequent'?'Exploratoria: diferencia de al menos 3 puntos porcentuales; no exige significancia estadística. ':'')+'Frecuencia histórica, no probabilidad de ganar. Las señales de distintos umbrales se solapan; no son confirmaciones independientes.';
     }
     document.getElementById('signal-digits').innerHTML = digitCounts.map((frequency,digit)=>{
+        if (!all && (!valid || digit !== selected)) return '';
+        if (all && digit === 9) return ''; 
         const s=active.find(s=>s.n===digit);
         return '<div class="signal-digit'+(s?' suggested':'')+'"><span class="signal-arrow" aria-label="'+(s?s.type.toUpperCase()+' umbral '+digit:'Sin señal')+'">'+(s?(s.type==='over'?'↑':'↓'):'·')+'</span><strong>'+digit+'</strong><small>'+(count?frequency/count*100:0).toFixed(1)+'%</small></div>';
     }).join('');
@@ -2508,7 +2511,7 @@ function changeAnalysisWindow() {
 const helpContent = {
     'analysis-window': ['Ticks a analizar', 'Cantidad de datos recientes usados en gráficos, estadísticas y señales: entre 20 y 1000. Al reducir se conservan los últimos ticks; al aumentar se esperan nuevos datos hasta completar la ventana. No cambia la duración de las operaciones (3 ticks).', 'Ejemplo: 50 ticks empieza antes que 200, pero los porcentajes fluctúan más.'],
     'signal-sensitivity': ['Sensibilidad', 'Frecuente: muestra desviaciones de 3 puntos porcentuales sin exigir significancia. Equilibrada: límite inferior Wilson al 80% superior a la base. Estricta: usa el 95%. Más señales no significa mayor precisión.', 'Ejemplo: OVER 5 con 44% observado frente a base 40% puede activar el modo frecuente, aunque no pase el filtro estricto.'],
-    'signal-scope': ['Umbrales de señales', 'Todos analiza umbrales 0 a 8 en cada tick; Solo el elegido analiza el campo Umbral. Confidence corresponde a la señal principal, ordenada por desviación estandarizada. El bot usa esa dirección y ese umbral.', 'Las flechas de diferentes umbrales pueden representar los mismos ticks; no son oportunidades independientes.'],
+    'signal-scope': ['Umbrales de señales', 'Ambos modos respetan la Predicción elegida (Over o Under). Todos revisa umbrales 0 a 8; Solo el elegido revisa exclusivamente el campo Umbral. El bot usa el umbral de la señal principal sin modificar tus selectores. Las entradas manuales siempre usan el umbral que elegiste.', 'Las flechas de diferentes umbrales pueden representar los mismos ticks; no son oportunidades independientes.'],
     symbol: ['Activo', 'Selecciona el mercado que suministra los ticks. Cambiar de activo reinicia la ventana; una operación pendiente se anula y su apuesta se devuelve.', 'Ejemplo: Volatility 10.'],
     'real-price': ['Precio actual', 'Última cotización recibida de Deriv. Es de solo lectura. El último dígito se obtiene respetando la precisión indicada por el proveedor.', 'Ejemplo: 123.40 produce el dígito 0, no el 4.'],
     'trade-type': ['Predicción', 'OVER gana si el último dígito es mayor que el umbral. UNDER gana si es menor o igual. Esta es la regla del simulador y no un contrato real de Deriv.', 'Ejemplo: OVER 5 gana con 6, 7, 8 o 9; UNDER 5 con 0 a 5. La resolución ocurre en el tercer tick posterior a la entrada.'],
@@ -2657,7 +2660,10 @@ try {
 document.getElementById('analysis-window').value=analysisWindow;
 document.getElementById('analysis-window').addEventListener('change',changeAnalysisWindow);
 ['signal-sensitivity','signal-scope'].forEach(id=>document.getElementById(id).addEventListener('change',()=>{saveAnalysisSettings();updateSignal();}));
-['trade-thold','trade-type'].forEach(id=>document.getElementById(id).addEventListener('input',updateSignal));
+['trade-thold','trade-type'].forEach(id=>{
+    document.getElementById(id).addEventListener('input',updateSignal);
+    document.getElementById(id).addEventListener('change',updateSignal);
+});
 updateSignal();
 
 </script>

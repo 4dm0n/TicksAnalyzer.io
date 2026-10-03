@@ -112,7 +112,7 @@ Deploy **index.html** to GitHub Pages. Styles, SVG icons and workspace logic are
 
 ## Verification
 
-35 functional checks, persisted ordering, 30 theme/viewport combinations and a real read-only Deriv tick connection passed in desktop Chrome. See workspace-checks.json. Physical iOS/Android validation remains pending. Run Get-Content verify-workspace.cjs -Raw | node on Windows with Chrome; CHROME_PATH can override the executable. Tests use ports 8765/9223 and the isolated .ui-browser profile.
+44 functional checks, persisted ordering, 30 theme/viewport combinations and a real read-only Deriv tick connection passed in desktop Chrome. See workspace-checks.json. Physical iOS/Android validation remains pending. Run Get-Content verify-workspace.cjs -Raw | node on Windows with Chrome; CHROME_PATH can override the executable. Tests use ports 8765/9223 and the isolated .ui-browser profile.
 
 ### Updating embedded assets
 
@@ -121,3 +121,7 @@ Deploy **index.html** to GitHub Pages. Styles, SVG icons and workspace logic are
 ### Configurable window and sensitivity
 
 Defaults: 100 ticks, Frequent sensitivity, all thresholds (0–8). Preferences persist in localStorage. Frequent mode is exploratory and does not require statistical significance or promise profitability. The main signal ranks by standardized deviation; Confidence refers to it. Multiple threshold arrows can be correlated. Shrinking the window discards oldest data; growing it waits for new samples without resetting account or settlement counters.
+
+### Direction and signal scope
+
+Manual trades, signals and bot always respect the selected Over/Under direction. Selected-only mode displays and analyzes the selected threshold. All mode scans 0–8 in that direction; the bot uses the leading signal threshold without changing user controls. Manual entries still use the selected threshold. Changing controls never changes an already open trade.

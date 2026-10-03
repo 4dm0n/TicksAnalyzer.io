@@ -118,7 +118,7 @@ Sube **index.html** a GitHub Pages. Incluye estilos, iconos SVG y lógica del wo
 
 ## Verificación
 
-35 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
+44 comprobaciones funcionales, restauración del orden y 30 combinaciones responsive (320–1920 px, cinco temas). Incluyen liquidación después del tick 200, saldo, cancelaciones, Martingala, bot, take profit, modales y geometría del donut. Datos deterministas para lógica y una conexión real de lectura a Deriv. Resultado: workspace-checks.json.
 
 En Windows con Chrome instalado: Get-Content verify-workspace.cjs -Raw | node. CHROME_PATH permite indicar otro ejecutable compatible. Las pruebas usan los puertos locales 8765 y 9223 y un perfil aislado .ui-browser.
 
@@ -129,3 +129,7 @@ En Windows con Chrome instalado: Get-Content verify-workspace.cjs -Raw | node. C
 ### Ventana y sensibilidad configurables
 
 Valores iniciales: 100 ticks, sensibilidad Frecuente y todos los umbrales (0–8). Las preferencias se guardan en localStorage. El modo frecuente es exploratorio: no exige significancia estadística y no promete rentabilidad. La señal principal se ordena por desviación estandarizada; Confidence corresponde a esa señal. Analizar varios umbrales puede mostrar flechas correlacionadas, no oportunidades independientes. Reducir la ventana descarta datos antiguos; aumentarla espera nuevos datos sin reiniciar la cuenta ni el contador de liquidación.
+
+### Dirección y alcance de señales
+
+Over/Under siempre respeta el selector Predicción, tanto en señales como en operaciones manuales y bot. Solo el elegido muestra y analiza exclusivamente el Umbral seleccionado. Todos analiza 0–8 en la dirección elegida; el bot puede usar el umbral de la señal principal, pero no modifica los selectores. Una entrada manual siempre usa el umbral seleccionado. Los cambios de controles no alteran una operación ya abierta.
